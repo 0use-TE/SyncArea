@@ -7,7 +7,7 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">SyncArea</MudText>
+        <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.h5">SyncArea</MudText> </MudButton>
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
 @inject UserCRUDService UserCRUDService
