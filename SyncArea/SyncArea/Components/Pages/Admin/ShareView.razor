@@ -1,0 +1,47 @@
+﻿@page "/share"
+@using SyncArea.Services
+@inject ShareService ShareService
+@inject WorkItemService WorkItemService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudCard Outlined="true">
+    <MudCardHeader>
+        <MudText Typo="Typo.h5">@Share?.WorkspaceName</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (Share == null)
+        {
+            <MudAlert Severity="Severity.Error">分享链接无效或已过期</MudAlert>
+        }
+        else if (GroupedWorkItems.Any())
+        {
+          <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
+        }
+        else
+        {
+            <MudText>暂无工作项</MudText>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "shareId")]
+    public Guid ShareId { get; set; }
+
+    private ShareDto? Share { get; set; }
+    private List<WorkItemDto> WorkItems { get; set; } = new();
+    private IEnumerable<IGrouping<DateTime, WorkItemDto>> GroupedWorkItems => WorkItems.GroupBy(wi => wi.Date.Date);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Share = await ShareService.GetShareByUrlAsync(ShareId.ToString());
+        if (Share == null)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+        WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(Share.WorkspaceId);
+    }
+}

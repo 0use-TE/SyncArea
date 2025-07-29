@@ -127,7 +127,8 @@ namespace SyncArea.Services
                 {
                     Id = u.Id,
                     Username = u.UserName,
-                    Email = u.Email
+                    Email = u.Email,
+                    Name = u.Name
                 });
 
             var users = await query
@@ -217,12 +218,56 @@ namespace SyncArea.Services
             _snackbar.Add($"用户 {user.UserName} 已加入工作区 {workspace.Name}", Severity.Success);
             return true;
         }
+        public async Task<bool> UpdateUserAsync(string userId, string username, string? password)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _snackbar.Add("用户不存在", Severity.Error);
+                return false;
+            }
+
+            // 更新用户名
+            if (user.UserName != username)
+            {
+                var existingUser = await _userManager.FindByNameAsync(username);
+                if (existingUser != null && existingUser.Id != userId)
+                {
+                    _snackbar.Add("用户名已存在", Severity.Error);
+                    return false;
+                }
+                user.UserName = username;
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    _snackbar.Add($"更新用户名失败：{string.Join(", ", updateResult.Errors.Select(e => e.Description))}", Severity.Error);
+                    return false;
+                }
+            }
+
+            // 更新密码（如果提供）
+            if (!string.IsNullOrEmpty(password))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var resetResult = await _userManager.ResetPasswordAsync(user, token, password);
+                if (!resetResult.Succeeded)
+                {
+                    _snackbar.Add($"更新密码失败：{string.Join(", ", resetResult.Errors.Select(e => e.Description))}", Severity.Error);
+                    return false;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+            _snackbar.Add("用户信息更新成功", Severity.Success);
+            return true;
+        }
     }
 
     public class UserDto
     {
         public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
+        public string? Name { get; set; }
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
     }

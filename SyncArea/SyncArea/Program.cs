@@ -65,7 +65,7 @@ builder.Services.AddScoped<UserCRUDService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<WorkItemService>();
-
+builder.Services.AddScoped<ShareService>();
 //Ìí¼Óoptions
 builder.Services.Configure<DefaultAdminModel>(builder.Configuration.GetSection("DefaultAdminModel"));
 

@@ -22,48 +22,7 @@
         }
         else if (GroupedWorkItems.Any())
         {
-        <div  id="container" style="max-height:80vh;overflow:auto">
-            <MudXOutline ScrollContainerSelector="#container">
-                @foreach (var group in GroupedWorkItems)
-                {
-                        var date = group.Key.Date.ToString("yyyy-MM-dd");
-                <MudXOutlineSection Title="@date">
-                       <MudExpansionPanels>
-                                <MudExpansionPanel Text="@date">
-                                    <MudPaper Outlined Class="pa-4">
-
-                             @foreach (var item in group)
-                            {
-                                    <MudText>创建者: @item.Username</MudText>
-                                    <MudText>备注: @(item.Remark ?? "无")</MudText>
-                                    <MudText>图片数: @item.PhotoCount</MudText>
-                                    @if (item.PhotoPreviews.Any())
-                                    {
-                                        <MudGrid Class="mt-2">
-                                            @foreach (var preview in item.PhotoPreviews)
-                                            {
-                                                <MudItem xs="6" sm="4">
-                                                    <MudImage Src="@($"data:image/jpeg;base64,{preview}")" Alt="照片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
-                                                </MudItem>
-                                            }
-                                        </MudGrid>
-                                    }
-                                    else
-                                    {
-                                        <MudText Color="Color.Info">无照片</MudText>
-                                    }
-                                    <MudDivider></MudDivider>
-                            }
-                                    </MudPaper>
-                                </MudExpansionPanel>
-                       </MudExpansionPanels>
-                    </MudXOutlineSection>
-
-
-                }
-                </MudXOutline>
-
-            </div>
+       <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
         }
         else
         {

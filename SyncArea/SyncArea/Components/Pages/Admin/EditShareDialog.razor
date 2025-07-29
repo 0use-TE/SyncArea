@@ -1,0 +1,71 @@
+﻿@using SyncArea.Services
+@inject ShareService ShareService
+@inject ISnackbar Snackbar
+@inherits MudComponentBase
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">修改分享链接</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleUpdateShare">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="工作区" Value="@Share.WorkspaceName" Disabled="true" />
+            <MudTextField Variant="Variant.Outlined" Label="链接" Value="@Share.Url" Disabled="true" />
+            <MudDatePicker Label="过期日期" Variant="Variant.Outlined" @bind-Date="Model.ExpiryDate" For="@(() => Model.ExpiryDate)" MinDate="@DateTime.Today.AddDays(1)" />
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
+            }
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleUpdateShare">保存</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public ShareDto Share { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnShareUpdated { get; set; }
+
+    private EditShareModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    public class EditShareModel
+    {
+        [Required(ErrorMessage = "请选择过期日期")]
+        public DateTime? ExpiryDate { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        Model.ExpiryDate = Share.ExpiryDate;
+    }
+
+    private async Task HandleUpdateShare()
+    {
+        if (Model.ExpiryDate == null)
+        {
+            ErrorMessage = "请选择过期日期";
+            return;
+        }
+
+        var success = await ShareService.UpdateShareExpiryDateAsync(Share.Id, Model.ExpiryDate.Value);
+        if (success)
+        {
+            await OnShareUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "修改分享链接失败";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

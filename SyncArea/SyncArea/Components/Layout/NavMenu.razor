@@ -1,10 +1,8 @@
 ﻿@inject UserCRUDService UserCRUDService
 <MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">工作区</MudNavLink>
-    @if(UserCRUDService.isAdmin)
-    {
     <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ManageAccounts">后台管理</MudNavLink>
-    }
+    <MudNavLink Href="/sharePage" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Share">外链分享</MudNavLink>
 </MudNavMenu>
 
 

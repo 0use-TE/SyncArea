@@ -12,7 +12,7 @@
     <DialogContent>
         <EditForm Model="@Model" OnValidSubmit="HandleJoinWorkspace">
             <DataAnnotationsValidator />
-            <MudTextField Variant="Variant.Outlined" Label="房间号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
+            <MudTextField Variant="Variant.Outlined" Label="项目号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
             <MudTextField Variant="Variant.Outlined" Label="密码（可选）" @bind-Value="Model.Password" InputType="InputType.Password" />
             <MudText Color="Color.Error">@ErrorMessage</MudText>
         </EditForm>

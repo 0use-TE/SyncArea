@@ -1,5 +1,5 @@
 ﻿@inherits LayoutComponentBase
-
+@inject UserCRUDService UserCRUDService
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -7,16 +7,22 @@
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Dense Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        @if (UserCRUDService.isAdmin)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        }
         <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.h5">SyncArea</MudText> </MudButton>
         <MudSpacer />
+
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-@inject UserCRUDService UserCRUDService
         <MudIconButton Icon="@Icons.Material.Outlined.AccountCircle" Edge="Edge.End" Color="Color.Primary" Href="/AccountSettingPage" />
     </MudAppBar>
+    @if(UserCRUDService.isAdmin)
+    {
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
     </MudDrawer>
+    }
     <MudMainContent Class="mt-16 pa-4">
         @Body
     </MudMainContent>
