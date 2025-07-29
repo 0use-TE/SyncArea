@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor;
 using MudBlazor.Services;
 using SyncArea.Components;
 using SyncArea.Identity;
@@ -31,11 +33,14 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddScoped<IAuthorizationHandler, WorkspaceMemberHandler>();
+
 // 配置 Cookie 认证（30天滑动过期）
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
 }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.Cookie.HttpOnly = true;
@@ -45,7 +50,11 @@ builder.Services.AddAuthentication(options =>
     options.LogoutPath = "/Account/Logout"; // 登出路径
     options.AccessDeniedPath = "/AccessDenied"; // 访问被拒绝路径
 });
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("WorkspaceMember", policy =>
+        policy.Requirements.Add(new WorkspaceMemberRequirement()));
+});
 //业务服务
 //注册电路
 builder.Services.AddScoped<CircuitHandler, MyCircuit>();
@@ -61,7 +70,7 @@ builder.Services.AddScoped<WorkItemService>();
 builder.Services.Configure<DefaultAdminModel>(builder.Configuration.GetSection("DefaultAdminModel"));
 
 // Add MudBlazor services
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(options => options.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight);
 builder.Services.AddRazorPages();
 
 // Add services to the container.

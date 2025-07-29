@@ -1,6 +1,6 @@
 ﻿@page "/"
 @page "/workspaces"
-@attribute [Authorize]
+@attribute [Authorize(Policy = "WorkspaceMember")]
 @using Microsoft.AspNetCore.Authorization
 @using SyncArea.Identity.Models
 @using SyncArea.Services

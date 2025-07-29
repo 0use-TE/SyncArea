@@ -2,7 +2,7 @@
 @inject UserCRUDService UserCRUDService
 @inject ISnackbar SnackBar
 @attribute [Authorize]
-
+@inject NavigationManager NavigationManager
 <div class="d-flex flex-column align-center">
     <MudContainer MaxWidth="MaxWidth.Medium">
         <MudCard>
@@ -24,7 +24,8 @@
                         </MudPopover>
                     </div>
                     <br />
-                <MudButton Class="ml-auto" Color="Color.Primary" Variant="Variant.Outlined" OnClick="@(()=>popUserData=!popUserData)">修改</MudButton>
+                    <MudButton Class="ml-auto" Color="Color.Primary" Variant="Variant.Outlined" OnClick="@(()=>popUserData=!popUserData)">修改</MudButton>
+                    <MudButton Class="ml-auto" Color="Color.Error" Href="" Variant="Variant.Outlined" OnClick="@(()=>NavigationManager.NavigateTo("/account/logout",true))">登出</MudButton>
     
                 </div>
 
@@ -32,7 +33,7 @@
         </MudCard>
         <MudPopover Open=popUserData Fixed Class="pa-4 d-flex flex-column " AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" >
             <MudIconButton Icon="@Icons.Material.Rounded.Close" OnClick="@(()=>popUserData=!popUserData)" Class="ml-auto" Color="Color.Secondary"></MudIconButton>
-            <MudTextField Placeholder="输入名称" Variant="Variant.Outlined" @bind-Value=name ></MudTextField>
+            <MudTextField Placeholder="输入新的姓名" Variant="Variant.Outlined" @bind-Value=name ></MudTextField>
         <MudButton Class="ml-auto" Variant="Variant.Outlined" Color="Color.Primary" OnClick="ChangeUserData">保存</MudButton>
         </MudPopover>
 

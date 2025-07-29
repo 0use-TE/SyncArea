@@ -1,8 +1,8 @@
 ﻿@using SyncArea.Services
 @inject WorkItemService WorkItemService
+@inject UserManager<SyncArea.Identity.Models.ApplicationUser> UserManager
 @inject ISnackbar Snackbar
 @inject UserCRUDService UserCRUDService
-@inject UserManager<SyncArea.Identity.Models.ApplicationUser> UserManager
 @inherits MudComponentBase
 
 <MudDialog>
@@ -13,17 +13,33 @@
         <EditForm Model="@Model" OnValidSubmit="HandleCreateWorkItem">
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
+            <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" />
             <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload">上传图片</MudButton>
+                <ActivatorContent   >
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Upload" Disabled="@(Images.Count >= 10)">上传图片</MudButton>
                 </ActivatorContent>
             </MudFileUpload>
-            <MudText Color="Color.Error">@ErrorMessage</MudText>
+            @if (ImagePreviews.Any())
+            {
+                <MudText Typo="Typo.body2" Class="mt-2">已选择 @ImagePreviews.Count 张图片</MudText>
+                <MudGrid>
+                    @foreach (var preview in ImagePreviews)
+                    {
+                        <MudItem xs="6" sm="4">
+                            <MudImage Src="@preview" Alt="预览图片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
+            }
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">取消</MudButton>
-        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="HandleCreateWorkItem">创建</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleCreateWorkItem">创建</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -35,22 +51,39 @@
     private CreateWorkItemModel Model { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
     private List<byte[]> Images { get; set; } = new();
+    private List<string> ImagePreviews { get; set; } = new();
 
     public class CreateWorkItemModel
     {
         public string? Remark { get; set; }
+        public DateTime Date { get; set; } = DateTime.Now;
     }
 
     private async Task OnFilesChanged(IReadOnlyList<IBrowserFile> files)
     {
         Images.Clear();
+        ImagePreviews.Clear();
         foreach (var file in files)
         {
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB 限制
+            if (file.Size > 10 * 1024 * 1024) // 10MB 限制
+            {
+                Snackbar.Add($"图片 {file.Name} 超过 10MB", Severity.Error);
+                continue;
+            }
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
             using var memoryStream = new MemoryStream();
             await stream.CopyToAsync(memoryStream);
-            Images.Add(memoryStream.ToArray());
+            var imageData = memoryStream.ToArray();
+            Images.Add(imageData);
+            ImagePreviews.Add($"data:image/{file.ContentType.Split('/')[1]};base64,{Convert.ToBase64String(imageData)}");
         }
+        if (Images.Count > 10)
+        {
+            Images = Images.Take(10).ToList();
+            ImagePreviews = ImagePreviews.Take(10).ToList();
+            Snackbar.Add("最多上传 10 张图片", Severity.Warning);
+        }
+        StateHasChanged();
     }
 
     private async Task HandleCreateWorkItem()
@@ -59,19 +92,20 @@
         if (user == null)
         {
             ErrorMessage = "用户未登录";
+            Snackbar.Add("用户未登录", Severity.Error);
             return;
         }
 
-        var success = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark, Images.Any() ? Images : null);
+        var success = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark,Model.Date, Images.Any() ? Images : null);
         if (success)
         {
             await OnWorkItemCreated.InvokeAsync();
-            Snackbar.Add("工作项创建成功", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         else
         {
             ErrorMessage = "创建工作项失败";
+            Snackbar.Add("创建工作项失败", Severity.Error);
         }
     }
 

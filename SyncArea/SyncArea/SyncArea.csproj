@@ -15,5 +15,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="8.*" />
+    <PackageReference Include="MudX.MudBlazor.Extension" Version="8.10.0" />
   </ItemGroup>
 </Project>
