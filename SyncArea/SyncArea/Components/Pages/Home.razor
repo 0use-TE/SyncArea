@@ -1,4 +1,71 @@
 ﻿@page "/"
+@page "/workspaces"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using SyncArea.Identity.Models
+@using SyncArea.Services
+@inject UserService UserService
+@inject UserCRUDService UserCRUDService
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
 
-<h1>主页</h1>
+<MudGrid>
+    <MudItem xs="12">
+        <MudCard>
+            <MudCardHeader>
+                <MudText Typo="Typo.h5">我的工作区</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowJoinWorkspaceDialog">加入工作区</MudButton>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    @foreach (var workspace in Workspaces)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard>
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6">@workspace.Name</MudText>
+                                    <MudText>房间号: @workspace.RoomNumber</MudText>
+                                    <MudText>创建时间: @workspace.CreatedAt.ToString("yyyy-MM-dd")</MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => NavigateToWorkspace(workspace.Id)">进入</MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    [Inject] private UserManager<ApplicationUser> _userManager { get; set; } = null!;
+    private List<WorkspaceDto> Workspaces { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = UserCRUDService.CurrentUser;
+        if (user != null)
+        {
+            Workspaces = await UserService.GetUserWorkspacesAsync(user.Id);
+        }
+    }
+
+    private async Task ShowJoinWorkspaceDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "OnJoined", EventCallback.Factory.Create(this, async () => await OnInitializedAsync()) }
+        };
+        await DialogService.ShowAsync<JoinWorkspaceDialog>("加入工作区", parameters);
+    }
+
+    private void NavigateToWorkspace(Guid workspaceId)
+    {
+        Navigation.NavigateTo($"/workspace/{workspaceId}");
+    }
+
+}

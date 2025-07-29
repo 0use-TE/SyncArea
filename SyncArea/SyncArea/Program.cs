@@ -52,6 +52,11 @@ builder.Services.AddScoped<CircuitHandler, MyCircuit>();
 builder.Services.AddHostedService<InitHostService>();
 builder.Services.AddScoped<UserCRUDService>();
 
+// 其他配置保持不变
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<WorkspaceService>();
+builder.Services.AddScoped<WorkItemService>();
+
 //添加options
 builder.Services.Configure<DefaultAdminModel>(builder.Configuration.GetSection("DefaultAdminModel"));
 

@@ -12,7 +12,6 @@ namespace SyncArea.Identity.Models
         public List<WorkItem> WorkItems { get; set; } = new List<WorkItem>();
 
         // 导航属性：用户相关的日志
-        public List<Log> Logs { get; set; } = new List<Log>();
         /// <summary>
         /// 真名
         /// </summary>

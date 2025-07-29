@@ -1,0 +1,148 @@
+﻿@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@using SyncArea.Misc
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject WorkspaceService WorkspaceService
+@inject IDialogService DialogService
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudCard>
+            <MudCardHeader>
+                <MudText Typo="Typo.h5">用户</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateUserDialog">创建用户</MudButton>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudDataGrid @ref="UserGrid" ServerData="LoadUsers" T="UserDto" MultiSelection="false" Style="max-height:60vh" FixedFooter FixedHeader>
+                    <Columns>
+                        <PropertyColumn Title="账号" Property="x=>x.Username"></PropertyColumn>
+                        <PropertyColumn Title="角色" Property="x=>x.Role"></PropertyColumn>
+                        <TemplateColumn Title="操作">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowAddToWorkspaceDialog(context.Item)">添加到工作区</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowViewWorkspacesDialog(context.Item)">查看工作区</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteUser(context.Item.Id)">删除</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager  PageSizeOptions="[100,500,1000,2000,10000]"/>
+                    </PagerContent>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12">
+        <MudCard>
+            <MudCardHeader>
+                <MudText Typo="Typo.h5">工作区</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateWorkspaceDialog">创建工作区</MudButton>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudDataGrid @ref="WorkspaceGrid" ServerData="LoadWorkspaces" T="WorkspaceDto" MultiSelection="false"  FixedFooter Style="max-height:60vh" FixedHeader>
+                    <Columns>
+
+                        <PropertyColumn Title="房间名" Property="x=>x.Name"></PropertyColumn>
+                        <PropertyColumn Title="房间号" Property="x=>x.RoomNumber"></PropertyColumn>
+                        <PropertyColumn Title="创建时间" Property="x=>x.CreatedAt"></PropertyColumn>
+                        <PropertyColumn Title="密码" Property="x=>x.Password"></PropertyColumn>
+                        <TemplateColumn Title="操作">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditWorkspaceDialog(context.Item)">编辑</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteWorkspace(context.Item.Id)">删除</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager PageSizeOptions="[100,500,1000,2000,10000]" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private MudDataGrid<UserDto> UserGrid = null!;
+    private MudDataGrid<WorkspaceDto> WorkspaceGrid = null!;
+
+    private async Task<GridData<UserDto>> LoadUsers(GridState<UserDto> state)
+    {
+        var users = await UserService.GetUsersAsync(state.Page + 1, state.PageSize);
+        return new GridData<UserDto>
+        {
+            Items = users,
+            TotalItems = (await UserService.GetUsersAsync()).Count
+        };
+    }
+
+    private async Task<GridData<WorkspaceDto>> LoadWorkspaces(GridState<WorkspaceDto> state)
+    {
+        var workspaces = await WorkspaceService.GetWorkspacesAsync(state.Page + 1, state.PageSize);
+        return new GridData<WorkspaceDto>
+        {
+            Items = workspaces,
+            TotalItems = (await WorkspaceService.GetWorkspacesAsync()).Count
+        };
+    }
+
+    private async Task ShowCreateUserDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "OnUserCreated", EventCallback.Factory.Create<string>(this, async () => await UserGrid.ReloadServerData()) }
+        };
+        await DialogService.ShowAsync<CreateUserDialog>("Create User", parameters, AppliationSettings.DialogOptions);
+    }
+
+    private async Task ShowCreateWorkspaceDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "OnWorkspaceCreated", EventCallback.Factory.Create<string>(this, async () => await WorkspaceGrid.ReloadServerData()) }
+        };
+        await DialogService.ShowAsync<CreateWorkspaceDialog>("Create Workspace", parameters, AppliationSettings.DialogOptions);
+    }
+
+    private async Task ShowEditWorkspaceDialog(WorkspaceDto workspace)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Workspace", workspace },
+            { "OnWorkspaceUpdated", EventCallback.Factory.Create<string>(this, async () => await WorkspaceGrid.ReloadServerData()) }
+        };
+        await DialogService.ShowAsync<EditWorkspaceDialog>("Edit Workspace", parameters, AppliationSettings.DialogOptions);
+    }
+
+    private async Task ShowAddToWorkspaceDialog(UserDto user)
+    {
+        var parameters = new DialogParameters
+        {
+            { "UserId", user.Id },
+            { "OnUserAdded", EventCallback.Factory.Create<string>(this, async () => await UserGrid.ReloadServerData()) }
+        };
+        await DialogService.ShowAsync<AddToWorkspaceDialog>("Add User to Workspace", parameters, AppliationSettings.DialogOptions);
+    }
+    private async Task ShowViewWorkspacesDialog(UserDto user)
+    {
+        var parameters = new DialogParameters
+        {
+            { "UserId", user.Id }
+        };
+        await DialogService.ShowAsync<ViewUserWorkspacesDialog>("View Workspaces", parameters, AppliationSettings.DialogOptions);
+    }
+    private async Task DeleteUser(string userId)
+    {
+        await UserService.DeleteUserAsync(userId);
+        await UserGrid.ReloadServerData();
+    }
+
+    private async Task DeleteWorkspace(Guid workspaceId)
+    {
+        await WorkspaceService.DeleteWorkspaceAsync(workspaceId);
+        await WorkspaceGrid.ReloadServerData();
+    }
+}

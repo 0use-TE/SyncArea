@@ -1,0 +1,65 @@
+﻿@inject WorkspaceService WorkspaceService
+<!-- 编辑工作区 -->
+<MudCard Outlined Class="pa-4 ma-4">
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">编辑工作区</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleUpdateWorkspace">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="房间名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
+            <MudTextField Variant="Variant.Outlined" Label="房间号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
+            <MudTextField Variant="Variant.Outlined" Label="密码(可选)" @bind-Value="Model.Password" InputType="InputType.Password" />
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
+        </EditForm>
+    </MudCardContent>
+    <MudCardActions Class="d-flex gap-1">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="ml-auto">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleUpdateWorkspace" >更新</MudButton>
+    </MudCardActions>
+</MudCard>
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public WorkspaceDto Workspace { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnWorkspaceUpdated { get; set; }
+
+    private EditWorkspaceModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        Model = new EditWorkspaceModel
+            {
+                Name = Workspace.Name,
+                RoomNumber = Workspace.RoomNumber
+            };
+    }
+
+    public class EditWorkspaceModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        [Required]
+        public string RoomNumber { get; set; } = string.Empty;
+        public string? Password { get; set; }
+    }
+
+    private async Task HandleUpdateWorkspace()
+    {
+        var success = await WorkspaceService.UpdateWorkspaceAsync(Workspace.Id, Model.Name, Model.RoomNumber, Model.Password);
+        if (success)
+        {
+            await OnWorkspaceUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "Failed to update workspace.";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

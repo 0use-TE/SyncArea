@@ -1,0 +1,83 @@
+﻿@using SyncArea.Services
+@inject WorkItemService WorkItemService
+@inject ISnackbar Snackbar
+@inject UserCRUDService UserCRUDService
+@inject UserManager<SyncArea.Identity.Models.ApplicationUser> UserManager
+@inherits MudComponentBase
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">添加工作项</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleCreateWorkItem">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload">上传图片</MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="HandleCreateWorkItem">创建</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Guid WorkspaceId { get; set; }
+    [Parameter] public EventCallback OnWorkItemCreated { get; set; }
+
+    private CreateWorkItemModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+    private List<byte[]> Images { get; set; } = new();
+
+    public class CreateWorkItemModel
+    {
+        public string? Remark { get; set; }
+    }
+
+    private async Task OnFilesChanged(IReadOnlyList<IBrowserFile> files)
+    {
+        Images.Clear();
+        foreach (var file in files)
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB 限制
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            Images.Add(memoryStream.ToArray());
+        }
+    }
+
+    private async Task HandleCreateWorkItem()
+    {
+        var user = UserCRUDService.CurrentUser;
+        if (user == null)
+        {
+            ErrorMessage = "用户未登录";
+            return;
+        }
+
+        var success = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark, Images.Any() ? Images : null);
+        if (success)
+        {
+            await OnWorkItemCreated.InvokeAsync();
+            Snackbar.Add("工作项创建成功", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "创建工作项失败";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

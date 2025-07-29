@@ -1,0 +1,38 @@
+﻿@inject UserService UserService
+@inherits MudComponentBase
+
+<MudCard Outlined Class="pa-4 ma-4">
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">用户的工作区</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudDataGrid T="WorkspaceDto" Items="@Workspaces" MultiSelection="false">
+            <Columns>
+                <PropertyColumn Title="名称" Property="x => x.Name" />
+                <PropertyColumn Title="房间号" Property="x => x.RoomNumber" />
+                <PropertyColumn Title="创建时间" Property="x => x.CreatedAt" />
+            </Columns>
+        </MudDataGrid>
+    </MudCardContent>
+    <MudCardActions Class="d-flex flex-column gap-1">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel" Class="ml-auto">关闭</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string UserId { get; set; } = string.Empty;
+
+    private List<WorkspaceDto> Workspaces { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Workspaces = await UserService.GetUserWorkspacesAsync(UserId);
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

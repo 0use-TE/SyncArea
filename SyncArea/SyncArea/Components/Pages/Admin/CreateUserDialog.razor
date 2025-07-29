@@ -1,0 +1,75 @@
+﻿@inject UserService UserService
+@inject WorkspaceService WorkspaceService
+@inherits MudComponentBase
+
+<MudCard Outlined Class="pa-4 ma-4">
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">创建用户</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleCreateUser">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
+            <MudTextField Variant="Variant.Outlined" Label="用户名" @bind-Value="Model.Username" For="@(() => Model.Username)" />
+            <MudTextField Variant="Variant.Outlined" Label="密码" @bind-Value="Model.Password" InputType="InputType.Password" For="@(() => Model.Password)" />
+            <MudSelect Variant="Variant.Outlined" T="WorkspaceDto" Label="选择工作区" MultiSelection="true" @bind-SelectedValues="Model.SelectedWorkspaces">
+                @foreach (var workspace in Workspaces)
+                {
+                    <MudSelectItem Value="@workspace">@workspace.Name (@workspace.RoomNumber)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
+        </EditForm>
+    </MudCardContent>
+    <MudCardActions Class="d-flex gap-1">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="ml-auto">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleCreateUser">创建</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnUserCreated { get; set; }
+
+    private CreateUserModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+    private List<WorkspaceDto> Workspaces { get; set; } = new();
+
+    public class CreateUserModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        [Required]
+        public string Username { get; set; } = string.Empty;
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+        public IEnumerable<WorkspaceDto> SelectedWorkspaces { get; set; } = new List<WorkspaceDto>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Workspaces = await WorkspaceService.GetWorkspacesAsync();
+    }
+
+    private async Task HandleCreateUser()
+    {
+
+        var workspaceIds = Model.SelectedWorkspaces?.Select(w => w.Id).ToList();
+        var success = await UserService.CreateUserAsync(Model.Username, Model.Password, workspaceIds);
+        if (success)
+        {
+            await OnUserCreated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "创建用户失败，可能用户名或邮箱已存在。";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

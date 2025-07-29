@@ -1,0 +1,72 @@
+﻿@page "/workspace/{WorkspaceId:guid}"
+@using Microsoft.AspNetCore.Authorization
+@using SyncArea.Identity.Models
+@using SyncArea.Services
+@attribute [Authorize]
+@inject WorkItemService WorkItemService
+@inject WorkspaceService WorkspaceService
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h5">@Workspace?.Name</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog">添加工作项</MudButton>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (GroupedWorkItems.Any())
+        {
+            <MudList T="WorkItem">
+                @foreach (var group in GroupedWorkItems)
+                {
+                    <MudListItem>
+                        <MudText Typo="Typo.h6">@group.Key.ToString("yyyy-MM-dd")</MudText>
+                        <MudList Subheader="工作项">
+                            @foreach (var item in group)
+                            {
+                                <MudListItem>
+                                    <MudText>备注: @(item.Remark ?? "无")</MudText>
+                                    <MudText>创建者: @item.Username</MudText>
+                                    <MudText>图片数: @item.PhotoCount</MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        else
+        {
+            <MudText>暂无工作项</MudText>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public Guid WorkspaceId { get; set; }
+    private WorkspaceDto? Workspace { get; set; }
+    private List<WorkItemDto> WorkItems { get; set; } = new();
+    private IEnumerable<IGrouping<DateTime, WorkItemDto>> GroupedWorkItems => WorkItems.GroupBy(wi => wi.Date.Date);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Workspace = (await WorkspaceService.GetWorkspacesAsync()).FirstOrDefault(w => w.Id == WorkspaceId);
+        if (Workspace == null)
+        {
+            Navigation.NavigateTo("/workspaces");
+            return;
+        }
+        WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
+    }
+
+    private async Task ShowCreateWorkItemDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "WorkspaceId", WorkspaceId },
+            { "OnWorkItemCreated", EventCallback.Factory.Create(this, async () => await OnInitializedAsync()) }
+        };
+        await DialogService.ShowAsync<CreateWorkItemDialog>("添加工作项", parameters);
+    }
+}

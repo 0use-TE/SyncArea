@@ -1,0 +1,67 @@
+﻿@using SyncArea.Services
+@inject UserService UserService
+@inject ISnackbar Snackbar
+@inject UserCRUDService UserCRUDService
+@inject UserManager<SyncArea.Identity.Models.ApplicationUser> UserManager
+@inherits MudComponentBase
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">加入工作区</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleJoinWorkspace">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="房间号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
+            <MudTextField Variant="Variant.Outlined" Label="密码（可选）" @bind-Value="Model.Password" InputType="InputType.Password" />
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="HandleJoinWorkspace">加入</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public EventCallback OnJoined { get; set; }
+
+    private JoinWorkspaceModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    public class JoinWorkspaceModel
+    {
+        [Required(ErrorMessage = "请输入房间号")]
+        public string RoomNumber { get; set; } = string.Empty;
+        public string? Password { get; set; }
+    }
+
+    private async Task HandleJoinWorkspace()
+    {
+        var user = UserCRUDService.CurrentUser;
+
+        if (user == null)
+        {
+            ErrorMessage = "请先登录";
+            return;
+        }
+
+        var success = await UserService.JoinWorkspaceAsync(user.Id, Model.RoomNumber, Model.Password);
+        if (success)
+        {
+            await OnJoined.InvokeAsync();
+            Snackbar.Add("成功加入工作区", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "加入失败，房间号或密码错误";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

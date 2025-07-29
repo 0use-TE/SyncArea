@@ -19,7 +19,6 @@ namespace SyncArea.Identity.Models
         public DbSet<Photo> Photos { get; set; }
         public DbSet<UserWorkspace> UserWorkspaces { get; set; }
         public DbSet<Share> Shares { get; set; }
-        public DbSet<Log> Logs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -69,18 +68,6 @@ namespace SyncArea.Identity.Models
                 .HasForeignKey(s => s.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 配置日志-用户和工作区关系
-            builder.Entity<Log>()
-                .HasOne(l => l.User)
-                .WithMany(u => u.Logs)
-                .HasForeignKey(l => l.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<Log>()
-                .HasOne(l => l.Workspace)
-                .WithMany(w => w.Logs)
-                .HasForeignKey(l => l.WorkspaceId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             // 确保房间号唯一
             builder.Entity<Workspace>()

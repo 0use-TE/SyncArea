@@ -1,0 +1,57 @@
+﻿@inject WorkspaceService WorkspaceService
+<!-- 创建工作区 -->
+<MudCard Outlined Class="pa-4 ma-4">
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">创建工作区</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleCreateWorkspace">
+            <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="工作区名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
+            <MudTextField Variant="Variant.Outlined" Label="房间号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
+            <MudTextField Variant="Variant.Outlined" Label="房间密码" @bind-Value="Model.Password" For="@(() => Model.Password)" />
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
+        </EditForm>
+    </MudCardContent>
+    <MudCardActions Class="d-flex gap-1">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="ml-auto">取消</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleCreateWorkspace">创建</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnWorkspaceCreated { get; set; }
+
+    private CreateWorkspaceModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    public class CreateWorkspaceModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        [Required]
+        public string RoomNumber { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    private async Task HandleCreateWorkspace()
+    {
+        var success = await WorkspaceService.CreateWorkspaceAsync(Model.Name, Model.RoomNumber, Model.Password);
+        if (success)
+        {
+            await OnWorkspaceCreated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "Failed to create workspace.";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

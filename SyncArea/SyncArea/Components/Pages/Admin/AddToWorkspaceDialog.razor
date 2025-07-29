@@ -1,0 +1,81 @@
+﻿@inject WorkspaceService WorkspaceService
+@inject UserService UserService
+<!-- 添加用户到工作区 -->
+<MudCard Outlined Class="pa-4 ma-4">
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">添加用户到工作区</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (Workspaces.Count == 0)
+        {
+            <MudText Color="Color.Primary">请先创建工作区!</MudText>
+        }
+        else
+        {
+            <MudSelect Variant="Variant.Outlined" Label="选择工作区"
+            @bind-SelectedValues="SelectedWorkspaces" MultiSelection>
+                @foreach (var workspace in Workspaces)
+                {
+                    <MudSelectItem Value="@workspace">@workspace.Name (@workspace.RoomNumber)</MudSelectItem>
+                }
+            </MudSelect>
+
+        }
+        <MudText Color="Color.Error">@ErrorMessage</MudText>
+    </MudCardContent>
+    <MudCardActions Class="d-flex gap-1">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="ml-auto">取消</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="HandleAddToWorkspace">添加</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string UserId { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnUserAdded { get; set; }
+    private List<WorkspaceDto> Workspaces { get; set; } = new();
+    private IEnumerable<WorkspaceDto> SelectedWorkspaces { get; set; } = new List<WorkspaceDto>();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Workspaces = await WorkspaceService.GetWorkspacesAsync();
+    }
+
+
+    private async Task HandleAddToWorkspace()
+    {
+        if (SelectedWorkspaces == null || SelectedWorkspaces.Count()== 0)
+        {
+            ErrorMessage = "请选择一个或多个工作区。";
+            return;
+        }
+
+        bool allSuccess = true;
+        foreach (var ws in SelectedWorkspaces)
+        {
+            var success = await UserService.AddUserToWorkspaceAsync(UserId, ws.Id);
+            if (!success)
+            {
+                allSuccess = false;
+                // 这里你可以选择记录失败的 workspace 名字
+            }
+        }
+
+        if (allSuccess)
+        {
+            await OnUserAdded.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            ErrorMessage = "部分工作区添加失败，请检查。";
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

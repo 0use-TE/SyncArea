@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SyncArea.Identity.Models;
 
@@ -10,9 +11,11 @@ using SyncArea.Identity.Models;
 namespace SyncArea.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250729102844_修改外键约束")]
+    partial class 修改外键约束
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -226,6 +229,35 @@ namespace SyncArea.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SyncArea.Identity.Models.Log", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ActionTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("WorkspaceId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WorkspaceId");
+
+                    b.ToTable("Logs");
+                });
+
             modelBuilder.Entity("SyncArea.Identity.Models.Photo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -394,6 +426,24 @@ namespace SyncArea.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SyncArea.Identity.Models.Log", b =>
+                {
+                    b.HasOne("SyncArea.Identity.Models.ApplicationUser", "User")
+                        .WithMany("Logs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SyncArea.Identity.Models.Workspace", "Workspace")
+                        .WithMany("Logs")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("User");
+
+                    b.Navigation("Workspace");
+                });
+
             modelBuilder.Entity("SyncArea.Identity.Models.Photo", b =>
                 {
                     b.HasOne("SyncArea.Identity.Models.WorkItem", "WorkItem")
@@ -456,6 +506,8 @@ namespace SyncArea.Migrations
 
             modelBuilder.Entity("SyncArea.Identity.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("Logs");
+
                     b.Navigation("UserWorkspaces");
 
                     b.Navigation("WorkItems");
@@ -468,6 +520,8 @@ namespace SyncArea.Migrations
 
             modelBuilder.Entity("SyncArea.Identity.Models.Workspace", b =>
                 {
+                    b.Navigation("Logs");
+
                     b.Navigation("Shares");
 
                     b.Navigation("UserWorkspaces");
