@@ -1,0 +1,26 @@
+﻿@page "/AccountSettingPage"
+@inject UserCRUDService UserCRUDService
+@attribute [Authorize(Roles ="Admin")]
+
+<div class="d-flex flex-column align-center">
+    <MudContainer MaxWidth="MaxWidth.Medium">
+        <MudCard>
+            <MudCardHeader>
+                <MudText Align="Align.Left" Typo="Typo.h5">个人资料</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>姓名: @UserCRUDService?.CurrentUser?.Name</MudText>
+                <MudText>账号：@UserCRUDService?.CurrentUser?.UserName</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Class="ml-auto" Color="Color.Primary" Variant="Variant.Outlined" OnClick="ChangeUserData">修改</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudContainer>
+</div>
+@code {
+    private async Task ChangeUserData()
+    {
+        
+    }
+}

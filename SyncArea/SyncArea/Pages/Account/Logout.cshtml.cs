@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace SyncArea.Pages.Account
 {
-    public class LoginModel : PageModel
+    public class LogoutModel : PageModel
     {
         public void OnGet()
         {

@@ -7,15 +7,17 @@ using SyncArea.Components;
 using SyncArea.Identity;
 using SyncArea.Identity.Models;
 using SyncArea.Models.Options;
+using SyncArea.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 // 配置 EF Core 和 SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(connectionString));
 
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString), ServiceLifetime.Scoped);
 // 配置 Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -46,13 +48,16 @@ builder.Services.AddAuthentication(options =>
 
 //业务服务
 //注册电路
-builder.Services.AddSingleton<CircuitHandler, MyCircuit>();
+builder.Services.AddScoped<CircuitHandler, MyCircuit>();
 builder.Services.AddHostedService<InitHostService>();
+builder.Services.AddScoped<UserCRUDService>();
+
 //添加options
 builder.Services.Configure<DefaultAdminModel>(builder.Configuration.GetSection("DefaultAdminModel"));
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+builder.Services.AddRazorPages();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -72,6 +77,8 @@ app.UseHttpsRedirection();
 
 
 app.UseAntiforgery();
+
+app.MapRazorPages().WithStaticAssets();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using SyncArea.Identity.Models;
 using SyncArea.Models.Options;
 
-namespace SyncArea.Identity
+namespace SyncArea.Services
 {
     public class InitHostService : IHostedService
     {
@@ -38,7 +38,7 @@ namespace SyncArea.Identity
                 var user = new ApplicationUser
                 {
                     UserName = opt.Account,
-                    Email = "admin@example.com"
+                    Name = opt.Name
                 };
 
                 var result = await userManager.CreateAsync(user, opt.Password ?? "123456");

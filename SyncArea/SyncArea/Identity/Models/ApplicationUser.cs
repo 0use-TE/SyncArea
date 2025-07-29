@@ -13,5 +13,9 @@ namespace SyncArea.Identity.Models
 
         // 导航属性：用户相关的日志
         public List<Log> Logs { get; set; } = new List<Log>();
+        /// <summary>
+        /// 真名
+        /// </summary>
+        public string? Name { get; set; }
     }
 }
