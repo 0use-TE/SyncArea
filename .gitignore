@@ -417,3 +417,5 @@ FodyWeavers.xsd
 *.msm
 *.msp
 /SyncArea/SyncArea/workmanagement.db
+/SyncArea/SyncArea/workmanagement.db-shm
+/SyncArea/SyncArea/workmanagement.db-wal
