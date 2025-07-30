@@ -60,7 +60,7 @@
     {
 
         var workspaceIds = Model.SelectedWorkspaces?.Select(w => w.Id).ToList();
-        var success = await UserService.CreateUserAsync(Model.Username, Model.Password, workspaceIds);
+        var success = await UserService.CreateUserAsync(Model.Name,Model.Username, Model.Password, workspaceIds);
         if (success)
         {
             await OnUserCreated.InvokeAsync();

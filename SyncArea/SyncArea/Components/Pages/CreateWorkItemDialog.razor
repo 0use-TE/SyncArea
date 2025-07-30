@@ -1,6 +1,8 @@
-﻿@using SyncArea.Services
+﻿@using MudBlazor
+@using SyncArea.Services
+@using SyncArea.Identity.Models
 @inject WorkItemService WorkItemService
-@inject UserManager<SyncArea.Identity.Models.ApplicationUser> UserManager
+@inject UserManager<ApplicationUser> UserManager
 @inject ISnackbar Snackbar
 @inject UserCRUDService UserCRUDService
 @inherits MudComponentBase
@@ -14,19 +16,23 @@
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
             <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" />
-            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
-                <ActivatorContent   >
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged"     MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
+                <ActivatorContent>
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Upload" Disabled="@(Images.Count >= 10)">上传图片</MudButton>
                 </ActivatorContent>
             </MudFileUpload>
             @if (ImagePreviews.Any())
             {
                 <MudText Typo="Typo.body2" Class="mt-2">已选择 @ImagePreviews.Count 张图片</MudText>
-                <MudGrid>
-                    @foreach (var preview in ImagePreviews)
+                <MudGrid Class="mt-2">
+                    @foreach (var preview in ImagePreviews.Select((value, index) => new { Value = value, Index = index }))
                     {
-                        <MudItem xs="6" sm="4">
-                            <MudImage Src="@preview" Alt="预览图片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
+                        <MudItem  sm="4"  md="3" lg="2">
+                            <MudCard Class="gallery-card">
+                                <MudBadge Icon="@Icons.Material.Filled.Close" Color="Color.Error" Overlap="true" Origin="Origin.TopRight" OnClick="() => RemoveImage(preview.Index)">
+                                    <MudImage Src="@preview.Value" Alt="预览图片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
+                                </MudBadge>
+                            </MudCard>
                         </MudItem>
                     }
                 </MudGrid>
@@ -43,8 +49,18 @@
     </DialogActions>
 </MudDialog>
 
+<style>
+    .gallery-card {
+        transition: transform 0.2s;
+    }
+
+        .gallery-card:hover {
+            transform: scale(1.05);
+        }
+</style>
+
 @code {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public Guid WorkspaceId { get; set; }
     [Parameter] public EventCallback OnWorkItemCreated { get; set; }
 
@@ -61,8 +77,6 @@
 
     private async Task OnFilesChanged(IReadOnlyList<IBrowserFile> files)
     {
-        Images.Clear();
-        ImagePreviews.Clear();
         foreach (var file in files)
         {
             if (file.Size > 10 * 1024 * 1024) // 10MB 限制
@@ -86,6 +100,17 @@
         StateHasChanged();
     }
 
+    private void RemoveImage(int index)
+    {
+        if (index >= 0 && index < Images.Count)
+        {
+            Images.RemoveAt(index);
+            ImagePreviews.RemoveAt(index);
+            Snackbar.Add("图片已移除", Severity.Info);
+            StateHasChanged();
+        }
+    }
+
     private async Task HandleCreateWorkItem()
     {
         var user = UserCRUDService.CurrentUser;
@@ -96,9 +121,10 @@
             return;
         }
 
-        var success = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark,Model.Date, Images.Any() ? Images : null);
+        var success = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark, Model.Date, Images.Any() ? Images : null);
         if (success)
         {
+            Snackbar.Add("工作项创建成功", Severity.Success);
             await OnWorkItemCreated.InvokeAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
@@ -113,5 +139,4 @@
     {
         MudDialog.Cancel();
     }
-
 }

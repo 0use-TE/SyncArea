@@ -10,28 +10,34 @@
 @inject NavigationManager Navigation
 
 <MudCard Elevation="0" >
-    <MudCardHeader>
-        <MudText Typo="Typo.h5" Color="Color.Primary">工作区名称: @Workspace?.Name</MudText>
+    <MudCardHeader Class="d-flex flex-column">
+        <MudText Typo="Typo.h5" Color="Color.Primary" Align="Align.Left">工作区名称: @Workspace?.Name</MudText>
+        <br />
         <MudSpacer />
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog">添加工作项</MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Href="/" >回到首页</MudButton>
+        <div class="d-flex ml-auto">
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Href="/" >首页</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog" Class="mr-1">添加</MudButton>
+        </div>
     </MudCardHeader>
     <MudCardContent>
-        @if (IsLoading)
-        {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-        }
-        else if (GroupedWorkItems.Any())
-        {
-       <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
-        }
-        else
-        {
-            <MudText>暂无工作项</MudText>
-        }
+
     </MudCardContent>
 </MudCard>
+<div>
 
+        @if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+}
+else if (GroupedWorkItems.Any())
+{
+    <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
+}
+else
+{
+    <MudText>暂无工作项</MudText>
+}
+</div>
 @code {
     [Parameter] public Guid WorkspaceId { get; set; }
     private WorkspaceDto? Workspace { get; set; }
@@ -59,7 +65,7 @@
             { "OnWorkItemCreated", EventCallback.Factory.Create(this, async () =>
             {
                 IsLoading = true;
-                await OnInitializedAsync();
+                WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
                 IsLoading = false;
             }) }
         };

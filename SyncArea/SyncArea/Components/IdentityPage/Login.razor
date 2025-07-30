@@ -2,49 +2,94 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using SyncArea.Identity.Models
 @inject NavigationManager Navigation
+@inject UserManager<ApplicationUser> UserManager
 @inject ISnackbar Snackbar
+@inject UserCRUDService UserCRUDService
+
 <div class="d-flex flex-column align-center justify-center gap-2" style="height:80vh">
     <MudContainer MaxWidth="MaxWidth.Small">
         <EditForm Model="@Model" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
-            <MudCard Outlined >
+            <MudCard Outlined>
                 <MudCardHeader>
                     <MudText Typo="Typo.h5">登录页面</MudText>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudTextField Variant="Variant.Outlined" Label="用户名" @bind-Value="Model.Username" For="@(() => Model.Username)" />
-                    <MudTextField Variant="Variant.Outlined" Label="密码" @bind-Value="Model.Password" InputType="InputType.Password" For="@(() => Model.Password)" />
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="用户名"
+                                  @bind-Value="Model.Username"
+                                  For="@(() => Model.Username)" />
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="密码"
+                                  @bind-Value="Model.Password"
+                                  InputType="InputType.Password"
+                                  For="@(() => Model.Password)" />
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton  ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" Class="ml-auto">登录</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Class="ml-auto">登录</MudButton>
                 </MudCardActions>
             </MudCard>
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
+            }
         </EditForm>
     </MudContainer>
 </div>
 
 @code {
     private LoginModel Model { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
 
     public class LoginModel
     {
-        [Required]
+        [Required(ErrorMessage = "用户名不能为空")]
         public string Username { get; set; } = string.Empty;
-        [Required]
+
+        [Required(ErrorMessage = "密码不能为空")]
         [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "密码必须至少 6 位")]
         public string Password { get; set; } = string.Empty;
     }
 
-    private  Task HandleLogin()
+    private async Task HandleLogin()
     {
+        // 检查密码长度（通过 DataAnnotations 自动验证）
+        if (Model.Password.Length < 6)
+        {
+            ErrorMessage = "密码必须至少 6 位";
+            Snackbar.Add(ErrorMessage, Severity.Error);
+            return;
+        }
+
+        // 查找用户
+        var user = await UserManager.FindByNameAsync(Model.Username);
+        if (user == null ) // 检查软删除
+        {
+            ErrorMessage = "用户名不存在或账户已被删除";
+            Snackbar.Add(ErrorMessage, Severity.Error);
+            return;
+        }
+
+        // 验证密码
+        var isPasswordValid = await UserManager.CheckPasswordAsync(user, Model.Password);
+        if (!isPasswordValid)
+        {
+            ErrorMessage = "密码错误";
+            Snackbar.Add(ErrorMessage, Severity.Error);
+            return;
+        }
+
+        // 验证通过，跳转到 /account/login
         var parameters = new Dictionary<string, string?>
             {
                 ["username"] = Model.Username,
                 ["password"] = Model.Password
             };
-
         var url = QueryHelpers.AddQueryString("/account/login", parameters);
-        Navigation.NavigateTo(url,true);
-        return Task.CompletedTask;
+        Navigation.NavigateTo(url, true);
     }
 }

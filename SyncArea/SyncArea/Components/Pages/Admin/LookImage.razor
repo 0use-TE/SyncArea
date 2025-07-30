@@ -1,0 +1,46 @@
+﻿@inject IJSRuntime JSRuntime
+
+<MudPaper Outlined Class="pa-4 d-flex flex-column">
+    <div class="ml-auto mb-2 d-flex gap-2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@DownloadImage">下载</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => MudDialog.Close())">关闭</MudButton>
+    </div>
+    <div style="height:70vh; overflow: auto;" class="d-flex justify-center align-center">
+        <MudImage Src="@Url" Fluid
+                  Style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+    </div>
+</MudPaper>
+
+
+@code {
+    [Parameter]
+    public string? Url { get; set; }
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+
+    private async Task DownloadImage()
+    {
+        if (string.IsNullOrWhiteSpace(Url))
+            return;
+
+        // 简单转义，防止js字符串错误
+        string safeUrl = Url.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "");
+
+        string jsCode = $@"
+            (function() {{
+                var url = '{safeUrl}';
+                var link = document.createElement('a');
+                link.href = url;
+                var fileName = url.substring(url.lastIndexOf('/') + 1) || 'download.png';
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }})();
+        ";
+
+        await JSRuntime.InvokeVoidAsync("eval", jsCode);
+    }
+}

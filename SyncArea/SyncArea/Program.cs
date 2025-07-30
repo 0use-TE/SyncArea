@@ -14,6 +14,8 @@ using SyncArea.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(x => x.ListenAnyIP(80));
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 // ≈‰÷√ EF Core ∫Õ SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -78,6 +80,7 @@ builder.Services.AddRazorPages();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
@@ -86,10 +89,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    // app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 
 app.UseAntiforgery();

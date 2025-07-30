@@ -53,11 +53,12 @@ namespace SyncArea.Services
             return true;
         }
 
-        public async Task<bool> CreateUserAsync(string username, string password, List<Guid>? workspaceIds = null)
+        public async Task<bool> CreateUserAsync(string name, string username, string password, List<Guid>? workspaceIds = null)
         {
             var user = new ApplicationUser
             {
                 UserName = username,
+                Name = name
             };
             if (password.Length < 6)
             {
@@ -115,6 +116,7 @@ namespace SyncArea.Services
             try
             {
                 await _dbContext.SaveChangesAsync();
+                _snackbar.Add($"创建用户{username}成功!", Severity.Success);
             }
             catch (DbUpdateException ex)
             {
@@ -223,7 +225,7 @@ namespace SyncArea.Services
             _snackbar.Add($"用户 {user.UserName} 已加入工作区 {workspace.Name}", Severity.Success);
             return true;
         }
-        public async Task<bool> UpdateUserAsync(string userId, string username, string? password)
+        public async Task<bool> UpdateUserAsync(string userId, string name, string username, string? password)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
@@ -232,7 +234,16 @@ namespace SyncArea.Services
                 return false;
             }
 
-            // 更新用户名
+            bool hasChanges = false;
+
+            // 更新 Name
+            if (user.Name != name)
+            {
+                user.Name = name;
+                hasChanges = true;
+            }
+
+            // 更新 UserName
             if (user.UserName != username)
             {
                 var existingUser = await _userManager.FindByNameAsync(username);
@@ -242,10 +253,17 @@ namespace SyncArea.Services
                     return false;
                 }
                 user.UserName = username;
+                user.NormalizedUserName = username.ToUpperInvariant(); // 确保 NormalizedUserName 同步更新
+                hasChanges = true;
+            }
+
+            // 保存用户信息（如果有更改）
+            if (hasChanges)
+            {
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
-                    _snackbar.Add($"更新用户名失败：{string.Join(", ", updateResult.Errors.Select(e => e.Description))}", Severity.Error);
+                    _snackbar.Add($"更新用户信息失败：{string.Join(", ", updateResult.Errors.Select(e => e.Description))}", Severity.Error);
                     return false;
                 }
             }
@@ -253,16 +271,41 @@ namespace SyncArea.Services
             // 更新密码（如果提供）
             if (!string.IsNullOrEmpty(password))
             {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var resetResult = await _userManager.ResetPasswordAsync(user, token, password);
-                if (!resetResult.Succeeded)
+                // 检查密码长度
+                if (password.Length < 6)
                 {
-                    _snackbar.Add($"更新密码失败：{string.Join(", ", resetResult.Errors.Select(e => e.Description))}", Severity.Error);
+                    _snackbar.Add("密码必须至少 6 位", Severity.Error);
+                    return false;
+                }
+
+                // 验证密码是否符合 Identity 策略
+                var passwordValidator = _userManager.PasswordValidators.FirstOrDefault();
+                if (passwordValidator != null)
+                {
+                    var validationResult = await passwordValidator.ValidateAsync(_userManager, user, password);
+                    if (!validationResult.Succeeded)
+                    {
+                        _snackbar.Add($"密码不符合要求：{string.Join(", ", validationResult.Errors.Select(e => e.Description))}", Severity.Error);
+                        return false;
+                    }
+                }
+
+                // 移除旧密码并添加新密码
+                var removeResult = await _userManager.RemovePasswordAsync(user);
+                if (!removeResult.Succeeded)
+                {
+                    _snackbar.Add($"移除旧密码失败：{string.Join(", ", removeResult.Errors.Select(e => e.Description))}", Severity.Error);
+                    return false;
+                }
+
+                var addResult = await _userManager.AddPasswordAsync(user, password);
+                if (!addResult.Succeeded)
+                {
+                    _snackbar.Add($"更新密码失败：{string.Join(", ", addResult.Errors.Select(e => e.Description))}", Severity.Error);
                     return false;
                 }
             }
 
-            await _dbContext.SaveChangesAsync();
             _snackbar.Add("用户信息更新成功", Severity.Success);
             return true;
         }

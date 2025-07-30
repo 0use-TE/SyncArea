@@ -12,7 +12,7 @@
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
             <MudTextField Variant="Variant.Outlined" Label="账号" @bind-Value="Model.Username" For="@(() => Model.Username)" />
-            <MudTextField Variant="Variant.Outlined" Label="新密码（可选）" @bind-Value="Model.Password" />
+            <MudTextField Variant="Variant.Outlined" Label="新密码（可选）" @bind-Value="Model.Password" For="@(()=>Model.Password)" />
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
@@ -49,7 +49,7 @@
 
     private async Task HandleUpdateUser()
     {
-        var success = await UserService.UpdateUserAsync(User.Id, Model.Username, Model.Password);
+        var success = await UserService.UpdateUserAsync(User.Id,Model.Name??"", Model.Username, Model.Password);
         if (success)
         {
             await OnUserUpdated.InvokeAsync();
