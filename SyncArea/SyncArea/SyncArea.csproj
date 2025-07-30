@@ -6,6 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="images\**" />
+    <Content Remove="images\**" />
+    <EmbeddedResource Remove="images\**" />
+    <None Remove="images\**" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Blazor.QrCodeGen" Version="1.1.3" />

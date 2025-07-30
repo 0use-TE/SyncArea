@@ -108,13 +108,6 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/images"
 });
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "images")),
-    RequestPath = "/images"
-});
-
 
 app.UseAntiforgery();
 

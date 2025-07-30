@@ -8,7 +8,7 @@
 @inject WorkspaceService WorkspaceService
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
-
+@inject IJSRuntime JSRuntime
 <MudCard Elevation="0">
     <MudCardHeader Class="d-flex flex-column">
         <MudText Typo="Typo.h5" Color="Color.Primary" Align="Align.Left">工作区名称: @Workspace?.Name</MudText>
@@ -54,17 +54,20 @@
         WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
         IsLoading = false;
     }
-
+    protected override async Task OnParametersSetAsync()
+    {
+    }
     private async Task ShowCreateWorkItemDialog()
     {
         var parameters = new DialogParameters
         {
             { "WorkspaceId", WorkspaceId },
-            { "OnWorkItemCreated", EventCallback.Factory.Create(this, async () =>
+            { "OnWorkItemCreated", EventCallback.Factory.Create<WorkItemDto>(this, async (WorkItemDto newWorkItem) =>
             {
-                IsLoading = true;
-                WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
-                IsLoading = false;
+                WorkItems.Add(newWorkItem); // 直接添加新工作项
+               await InvokeAsync(StateHasChanged); 
+        await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发
+
             }) }
         };
         await DialogService.ShowAsync<CreateWorkItemDialog>("添加工作项", parameters, AppliationSettings.DialogOptions);

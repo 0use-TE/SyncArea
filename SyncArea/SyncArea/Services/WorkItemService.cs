@@ -15,62 +15,81 @@ namespace SyncArea.Services
             _snackbar = snackbar;
         }
 
-        public async Task<bool> CreateWorkItemAsync(string userId, Guid workspaceId, string? remark, DateTime createDate, List<byte[]>? images)
+        public async Task<WorkItemDto> CreateWorkItemAsync(string userId, Guid workspaceId, string? remark, DateTime createDate, List<byte[]>? images)
         {
-            var workspace = await _dbContext.Workspaces.FindAsync(workspaceId);
-            if (workspace == null)
+            try
             {
-                _snackbar.Add("工作区不存在", Severity.Error);
-                return false;
-            }
-
-            var user = await _dbContext.Users.FindAsync(userId);
-            if (user == null)
-            {
-                _snackbar.Add("用户不存在", Severity.Error);
-                return false;
-            }
-
-            var workItem = new WorkItem
-            {
-                Id = Guid.NewGuid(),
-                Date = createDate,
-                Remark = remark,
-                WorkspaceId = workspaceId,
-                UserId = userId,
-                Photos = new List<Photo>()
-            };
-
-            if (images != null && images.Any())
-            {
-                foreach (var image in images)
+                var workspace = await _dbContext.Workspaces.FindAsync(workspaceId);
+                if (workspace == null)
                 {
-                    // 保存图片到 wwwroot/images
-                    var fileName = $"{Guid.NewGuid()}.jpg";
-                    var filePath = Path.Combine("wwwroot/images", fileName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath)!); // 确保目录存在
-                    await File.WriteAllBytesAsync(filePath, image);
-                    workItem.Photos.Add(new Photo
-                    {
-                        Id = Guid.NewGuid(),
-                        ImageUrl = $"/images/{fileName}" // 存储相对路径
-                    });
+                    _snackbar.Add("工作区不存在", Severity.Error);
+                    return null; // 返回 null 表示失败
                 }
+
+                var user = await _dbContext.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    _snackbar.Add("用户不存在", Severity.Error);
+                    return null;
+                }
+
+                var workItem = new WorkItem
+                {
+                    Id = Guid.NewGuid(),
+                    Date = createDate,
+                    Remark = remark,
+                    WorkspaceId = workspaceId,
+                    UserId = userId,
+                    Photos = new List<Photo>()
+                };
+
+                if (images != null && images.Any())
+                {
+                    var imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "images");
+                    Directory.CreateDirectory(imagesPath); // 确保目录存在
+                    foreach (var image in images)
+                    {
+                        var fileName = $"{Guid.NewGuid()}.jpg";
+                        var filePath = Path.Combine(imagesPath, fileName);
+                        await File.WriteAllBytesAsync(filePath, image);
+                        workItem.Photos.Add(new Photo
+                        {
+                            Id = Guid.NewGuid(),
+                            ImageUrl = fileName // 只存文件名，如 "guid.jpg"
+                        });
+                    }
+                }
+
+                _dbContext.WorkItems.Add(workItem);
+                await _dbContext.SaveChangesAsync();
+
+                foreach (var photo in workItem.Photos)
+                {
+                    photo.WorkItemId = workItem.Id;
+                }
+                await _dbContext.SaveChangesAsync();
+
+                // 转换为 WorkItemDto
+                var workItemDto = new WorkItemDto
+                {
+                    Id = workItem.Id,
+                    Username = user.UserName ?? "Unknown",
+                    Remark = workItem.Remark,
+                    Date = workItem.Date,
+                    PhotoUrls = workItem.Photos.Select(p => "images/" + p.ImageUrl).ToList(),
+                    PhotoCount = workItem.Photos.Count
+                };
+
+                _snackbar.Add("工作项创建成功", Severity.Success);
+                return workItemDto;
             }
-
-            _dbContext.WorkItems.Add(workItem);
-            await _dbContext.SaveChangesAsync();
-
-            foreach (var photo in workItem.Photos)
+            catch (Exception ex)
             {
-                photo.WorkItemId = workItem.Id;
+                _snackbar.Add($"创建工作项失败: {ex.Message}", Severity.Error);
+                Console.WriteLine($"Error creating work item: {ex.Message}");
+                return null;
             }
-            await _dbContext.SaveChangesAsync();
-
-            _snackbar.Add("工作项创建成功", Severity.Success);
-            return true;
         }
-
         public async Task<List<WorkItemDto>> GetWorkItemsByWorkspaceAsync(Guid workspaceId)
         {
             var workItems = await _dbContext.WorkItems
@@ -85,7 +104,7 @@ namespace SyncArea.Services
                     Remark = wi.Remark,
                     Username = wi.User != null ? wi.User.UserName : "未知用户",
                     PhotoCount = wi.Photos.Count,
-                    PhotoUrls = wi.Photos.Take(5).Select(p => p.ImageUrl).ToList()
+                    PhotoUrls = wi.Photos.Select(p => "images/" + p.ImageUrl).ToList()
                 })
                 .ToListAsync();
 
