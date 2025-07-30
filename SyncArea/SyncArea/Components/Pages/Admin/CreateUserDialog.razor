@@ -12,7 +12,7 @@
             <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
             <MudTextField Variant="Variant.Outlined" Label="用户名" @bind-Value="Model.Username" For="@(() => Model.Username)" />
             <MudTextField Variant="Variant.Outlined" Label="密码" @bind-Value="Model.Password" InputType="InputType.Password" For="@(() => Model.Password)" />
-            <MudSelect Variant="Variant.Outlined" T="WorkspaceDto" Label="选择工作区" MultiSelection="true" @bind-SelectedValues="Model.SelectedWorkspaces">
+            <MudSelect  MultiSelectionTextFunc="GetMultiSelectionText" Variant="Variant.Outlined" T="WorkspaceDto" Label="选择工作区" MultiSelection="true" @bind-SelectedValues="Model.SelectedWorkspaces">
                 @foreach (var workspace in Workspaces)
                 {
                     <MudSelectItem Value="@workspace">@workspace.Name (@workspace.RoomNumber)</MudSelectItem>
@@ -43,6 +43,7 @@
         public string Username { get; set; } = string.Empty;
         [Required]
         [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "密码长度不能少于6位")]
         public string Password { get; set; } = string.Empty;
         public IEnumerable<WorkspaceDto> SelectedWorkspaces { get; set; } = new List<WorkspaceDto>();
     }
@@ -51,7 +52,10 @@
     {
         Workspaces = await WorkspaceService.GetWorkspacesAsync();
     }
-
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        return $"您选择了{selectedValues.Count}个工作区";
+    }
     private async Task HandleCreateUser()
     {
 

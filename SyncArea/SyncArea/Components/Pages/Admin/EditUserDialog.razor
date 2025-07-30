@@ -3,26 +3,27 @@
 @inject ISnackbar Snackbar
 @inherits MudComponentBase
 
-<MudDialog>
-    <TitleContent>
+<MudCard Class="pa-4 ma-4" Outlined>
+    <MudCardHeader>
         <MudText Typo="Typo.h6">编辑用户</MudText>
-    </TitleContent>
-    <DialogContent>
+    </MudCardHeader>
+    <MudCardContent>
         <EditForm Model="@Model" OnValidSubmit="HandleUpdateUser">
             <DataAnnotationsValidator />
+            <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
             <MudTextField Variant="Variant.Outlined" Label="账号" @bind-Value="Model.Username" For="@(() => Model.Username)" />
-            <MudTextField Variant="Variant.Outlined" Label="新密码（可选）" @bind-Value="Model.Password" InputType="InputType.Password" />
+            <MudTextField Variant="Variant.Outlined" Label="新密码（可选）" @bind-Value="Model.Password" />
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
             }
         </EditForm>
-    </DialogContent>
-    <DialogActions>
+    </MudCardContent>
+    <MudCardActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">取消</MudButton>
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleUpdateUser">保存</MudButton>
-    </DialogActions>
-</MudDialog>
+    </MudCardActions>
+</MudCard>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
@@ -37,11 +38,13 @@
         [Required(ErrorMessage = "请输入账号")]
         public string Username { get; set; } = string.Empty;
         public string? Password { get; set; }
+        public string?Name{ get; set; }
     }
 
     protected override void OnInitialized()
     {
         Model.Username = User.Username;
+        Model.Name = User.Name;
     }
 
     private async Task HandleUpdateUser()

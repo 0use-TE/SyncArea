@@ -1,3 +1,4 @@
+using Blazor.QrCodeGen;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -60,6 +61,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<CircuitHandler, MyCircuit>();
 builder.Services.AddHostedService<InitHostService>();
 builder.Services.AddScoped<UserCRUDService>();
+builder.Services.AddScoped<ModuleCreator>();
 
 // 其他配置保持不变
 builder.Services.AddScoped<UserService>();

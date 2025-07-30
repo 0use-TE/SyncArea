@@ -3,7 +3,7 @@
 @using SyncArea.Identity.Models
 @using SyncArea.Misc
 @using SyncArea.Services
-@attribute [Authorize]
+@attribute [Authorize(Policy = "WorkspaceMember")]
 @inject WorkItemService WorkItemService
 @inject WorkspaceService WorkspaceService
 @inject IDialogService DialogService
@@ -14,6 +14,7 @@
         <MudText Typo="Typo.h5" Color="Color.Primary">工作区名称: @Workspace?.Name</MudText>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog">添加工作项</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Href="/" >回到首页</MudButton>
     </MudCardHeader>
     <MudCardContent>
         @if (IsLoading)

@@ -1,42 +1,69 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using SyncArea.Identity.Models;
+using System.Security.Claims;
 
 namespace SyncArea.Identity
 {
     public class WorkspaceMemberHandler : AuthorizationHandler<WorkspaceMemberRequirement>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IDbContextFactory<ApplicationDbContext> _dbContextFactory;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public WorkspaceMemberHandler(ApplicationDbContext dbContext)
+        public WorkspaceMemberHandler(IDbContextFactory<ApplicationDbContext> dbContextFactory, IHttpContextAccessor httpContextAccessor)
         {
-            _dbContext = dbContext;
+            _dbContextFactory = dbContextFactory;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, WorkspaceMemberRequirement requirement)
+        protected override async Task HandleRequirementAsync(
+                    AuthorizationHandlerContext context,
+                    WorkspaceMemberRequirement requirement)
         {
-            // 获取路由中的 WorkspaceId
-            if (context.Resource is AuthorizationFilterContext mvcContext)
+            // 获取 HttpContext
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null)
             {
-                var workspaceIdString = mvcContext.RouteData.Values["WorkspaceId"]?.ToString();
-                if (Guid.TryParse(workspaceIdString, out var workspaceId))
+                context.Fail();
+                return;
+            }
+
+            // 获取路由中的 WorkspaceId
+            var workspaceIdString = httpContext.Request.RouteValues["WorkspaceId"]?.ToString();
+            if (!Guid.TryParse(workspaceIdString, out var workspaceId))
+            {
+                context.Fail();
+                return;
+            }
+
+            // 获取用户 ID
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier); // 使用 NameIdentifier 而不是 Name
+            if (string.IsNullOrEmpty(userId))
+            {
+                context.Fail();
+                return;
+            }
+
+            // 检查用户是否在工作区中
+            try
+            {
+                await using var db = await _dbContextFactory.CreateDbContextAsync();
+                var isMember = await db.UserWorkspaces
+                    .AnyAsync(uw => uw.UserId == userId && uw.WorkspaceId == workspaceId);
+
+                if (isMember)
                 {
-                    var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    if (userId != null)
-                    {
-                        // 检查用户是否在工作区中
-                        var isMember = await _dbContext.UserWorkspaces
-                            .AnyAsync(uw => uw.UserId == userId && uw.WorkspaceId == workspaceId);
-                        if (isMember)
-                        {
-                            context.Succeed(requirement);
-                            return;
-                        }
-                    }
+                    context.Succeed(requirement);
+                }
+                else
+                {
+                    context.Fail();
                 }
             }
-            context.Fail();
+            catch
+            {
+                context.Fail();
+            }
         }
     }
 }

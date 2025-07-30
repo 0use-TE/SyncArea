@@ -15,19 +15,27 @@
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateShareDialog">创建分享链接</MudButton>
             </MudCardHeader>
             <MudCardContent>
-                <MudDataGrid @ref="ShareGrid" ServerData="LoadShares" T="ShareDto" MultiSelection="false" Style="max-height:60vh" FixedFooter FixedHeader>
+                <MudDataGrid @ref="ShareGrid" ServerData="LoadShares" T="ShareDto" MultiSelection="false" Style="max-height:60vh;overflow:auto" FixedFooter FixedHeader>
                     <Columns>
+                  
                         <PropertyColumn Title="工作区" Property="x=>x.WorkspaceName"></PropertyColumn>
                         <TemplateColumn Title="链接">
                             <CellTemplate>
-                                <MudLink Href="@($"{NavigationManager.BaseUri}share?shareid={context.Item.Url}")" Target="_blank" Typo="Typo.body2" Underline="Underline.Hover">@($"{NavigationManager.BaseUri}share?shareid={context.Item.Url}")</MudLink>
+                                @{
+                                    var url = $"{NavigationManager.BaseUri}share?shareid={context.Item.Url}";
+                                }
+                                <MudLink Href="@url" Target="_blank" Typo="Typo.body2" Underline="Underline.Hover">@url</MudLink>
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn Title="过期日期" Property="x=>x.ExpiryDate" Format="yyyy-MM-dd"></PropertyColumn>
                         <PropertyColumn Title="状态" Property="x=>x.IsActive"></PropertyColumn>
                         <TemplateColumn Title="操作">
                             <CellTemplate>
+                                @{
+                                    var url = $"{NavigationManager.BaseUri}share?shareid={context.Item.Url}";
+                                }
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditShareDialog(context.Item)" Disabled="@(!context.Item.IsActive)">修改</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="() => ShowQRCodePage(url)">二维码</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => RevokeShare(context.Item.Id)" Disabled="@(!context.Item.IsActive)">收回</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteShare(context.Item.Id)">删除</MudButton>
                             </CellTemplate>
@@ -63,7 +71,14 @@
         };
         await DialogService.ShowAsync<CreateShareDialog>("创建分享链接", parameters, AppliationSettings.DialogOptions);
     }
-
+    private async Task ShowQRCodePage(string share)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Share", share },
+        };
+        await DialogService.ShowAsync<QRCodePage>("查看二维码", parameters, AppliationSettings.DialogOptions);
+    }
     private async Task ShowEditShareDialog(ShareDto share)
     {
         var parameters = new DialogParameters

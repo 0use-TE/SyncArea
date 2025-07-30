@@ -1,0 +1,37 @@
+﻿@using Blazor.QrCodeGen
+@inject IJSRuntime JS
+
+<MudPaper Outlined Class="pa-4 ma-4">
+    <div id="qrContainer" class="d-flex flex-column align-center">
+        <MudLink Target="_blank" Color="Color.Primary">@Share</MudLink>
+
+        <QrCode CanvasId="qrCanvas" Text="@Share" />
+
+        <MudButton Color="Color.Primary" OnClick="@DownloadQrCode">
+            下载二维码
+        </MudButton>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string? Share { get; set; } = "https://example.com";
+
+    private async Task DownloadQrCode()
+    {
+        await JS.InvokeVoidAsync("eval", @"
+            (function(){
+                var container = document.getElementById('qrContainer');
+                if (!container) return;
+
+                var img = container.getElementsByTagName('img')[0];
+                if (!img) return;
+
+                var link = document.createElement('a');
+                link.href = img.src;
+                link.download = 'qrcode.png';
+                link.click();
+            })();
+        ");
+    }
+}

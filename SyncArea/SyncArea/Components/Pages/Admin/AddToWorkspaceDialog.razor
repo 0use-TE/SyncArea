@@ -12,11 +12,11 @@
         }
         else
         {
-            <MudSelect Variant="Variant.Outlined" Label="选择工作区"
-            @bind-SelectedValues="SelectedWorkspaces" MultiSelection>
+            <MudSelect Variant="Variant.Outlined" MultiSelectionTextFunc=GetMultiSelectionText Label="选择工作区"
+            @bind-SelectedValues="SelectedWorkspaces" MultiSelection >
                 @foreach (var workspace in Workspaces)
                 {
-                    <MudSelectItem Value="@workspace">@workspace.Name (@workspace.RoomNumber)</MudSelectItem>
+                    <MudSelectItem Value="@workspace">@workspace.Name </MudSelectItem>
                 }
             </MudSelect>
 
@@ -43,7 +43,10 @@
         Workspaces = await WorkspaceService.GetWorkspacesAsync();
     }
 
-
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+            return $"您选择了{selectedValues.Count}个工作区";
+    }
     private async Task HandleAddToWorkspace()
     {
         if (SelectedWorkspaces == null || SelectedWorkspaces.Count()== 0)

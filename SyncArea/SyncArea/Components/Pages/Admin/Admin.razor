@@ -9,14 +9,14 @@
 
 <MudGrid>
     <MudItem xs="12">
-        <MudCard>
+        <MudCard Outlined>
             <MudCardHeader>
                 <MudText Typo="Typo.h5">用户</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateUserDialog">创建用户</MudButton>
             </MudCardHeader>
             <MudCardContent>
-                <MudDataGrid @ref="UserGrid" ServerData="LoadUsers" T="UserDto" MultiSelection="false" Style="max-height:60vh" FixedFooter FixedHeader>
+                <MudDataGrid @ref="UserGrid" ServerData="LoadUsers" T="UserDto" MultiSelection="false" Style="max-height:60vh;overflow:auto" FixedFooter FixedHeader>
                     <Columns>
                         <PropertyColumn Title="账号" Property="x=>x.Username"></PropertyColumn>
                         <PropertyColumn Title="角色" Property="x=>x.Role"></PropertyColumn>
@@ -38,14 +38,14 @@
         </MudCard>
     </MudItem>
     <MudItem xs="12">
-        <MudCard>
+        <MudCard Outlined>
             <MudCardHeader>
                 <MudText Typo="Typo.h5">工作区</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateWorkspaceDialog">创建工作区</MudButton>
             </MudCardHeader>
             <MudCardContent>
-                <MudDataGrid @ref="WorkspaceGrid" ServerData="LoadWorkspaces" T="WorkspaceDto" MultiSelection="false"  FixedFooter Style="max-height:60vh" FixedHeader>
+                <MudDataGrid @ref="WorkspaceGrid" ServerData="LoadWorkspaces" T="WorkspaceDto" MultiSelection="false"  FixedFooter Style="max-height:60vh;overflow:auto" FixedHeader>
                     <Columns>
 
                         <PropertyColumn Title="项目名" Property="x=>x.Name"></PropertyColumn>
@@ -148,12 +148,23 @@
     }
     private async Task DeleteUser(string userId)
     {
+        var result=await DialogService.ShowMessageBox("删除用户", "确定要删除此用户吗？", "是", "否");
+        if (result.HasValue && !result.Value)
+        {
+            return; // 用户选择了否，取消删除
+        };
         await UserService.DeleteUserAsync(userId);
         await UserGrid.ReloadServerData();
     }
 
     private async Task DeleteWorkspace(Guid workspaceId)
     {
+        var result = await DialogService.ShowMessageBox("删除工作区", "确定要删除此工作区吗？", "是", "否");
+        if (result.HasValue && !result.Value)
+        {
+            return; // 用户选择了否，取消删除
+        }
+        ;
         await WorkspaceService.DeleteWorkspaceAsync(workspaceId);
         await WorkspaceGrid.ReloadServerData();
     }

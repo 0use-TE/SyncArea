@@ -24,7 +24,7 @@ namespace SyncArea.Identity.Models
         {
             base.OnModelCreating(builder);
 
-            // 配置用户-工作区多对多关系
+            // 用户-工作区 多对多，级联删除
             builder.Entity<UserWorkspace>()
                 .HasKey(uw => new { uw.UserId, uw.WorkspaceId });
 
@@ -32,53 +32,53 @@ namespace SyncArea.Identity.Models
                 .HasOne(uw => uw.User)
                 .WithMany(u => u.UserWorkspaces)
                 .HasForeignKey(uw => uw.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Cascade); // 用户删了，关联关系也删
 
             builder.Entity<UserWorkspace>()
                 .HasOne(uw => uw.Workspace)
                 .WithMany(w => w.UserWorkspaces)
                 .HasForeignKey(uw => uw.WorkspaceId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Cascade); // 工作区删了，关联关系也删
 
-            // 配置工作项-用户关系
+            // 工作项-用户（用户删了，工作项也删）
             builder.Entity<WorkItem>()
                 .HasOne(w => w.User)
                 .WithMany(u => u.WorkItems)
                 .HasForeignKey(w => w.UserId)
-                .OnDelete(DeleteBehavior.Restrict); // 用户删除时不删除工作项
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // 配置工作项-工作区关系
+            // 工作项-工作区（工作区删了，工作项也删）
             builder.Entity<WorkItem>()
                 .HasOne(w => w.Workspace)
                 .WithMany(w => w.WorkItems)
                 .HasForeignKey(w => w.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 配置照片-工作项关系（级联删除）
+            // 照片-工作项（工作项删了，保留照片，外键设为 NULL）
             builder.Entity<Photo>()
                 .HasOne(p => p.WorkItem)
                 .WithMany(w => w.Photos)
                 .HasForeignKey(p => p.WorkItemId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull); // 注意外键必须允许 NULL
 
-            // 配置分享-工作区关系
+            // 分享-工作区（工作区删了，分享也删）
             builder.Entity<Share>()
                 .HasOne(s => s.Workspace)
                 .WithMany(w => w.Shares)
                 .HasForeignKey(s => s.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             // 确保房间号唯一
             builder.Entity<Workspace>()
                 .HasIndex(w => w.RoomNumber)
                 .IsUnique();
 
-            // 种子数据：初始化角色
+            // 种子数据
             builder.Entity<IdentityRole>().HasData(
                 new IdentityRole { Id = "admin-role", Name = "Admin", NormalizedName = "ADMIN" },
                 new IdentityRole { Id = "user-role", Name = "User", NormalizedName = "USER" }
             );
         }
+
     }
 }

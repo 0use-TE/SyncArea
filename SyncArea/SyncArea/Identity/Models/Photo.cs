@@ -11,7 +11,7 @@ namespace SyncArea.Identity.Models
         [Required]
         public byte[] ImageData { get; set; } = Array.Empty<byte>(); // 二进制图片
 
-        public Guid WorkItemId { get; set; }
+        public Guid? WorkItemId { get; set; }
 
         [ForeignKey("WorkItemId")]
         public WorkItem WorkItem { get; set; } = null!; // 双向导航

@@ -59,6 +59,11 @@ namespace SyncArea.Services
             {
                 UserName = username,
             };
+            if (password.Length < 6)
+            {
+                _snackbar.Add("密码长度不能少于6位", Severity.Error);
+                return false;
+            }
 
             // 1. 使用 UserManager 创建用户
             var result = await _userManager.CreateAsync(user, password);
@@ -261,6 +266,32 @@ namespace SyncArea.Services
             _snackbar.Add("用户信息更新成功", Severity.Success);
             return true;
         }
+
+        public async Task RemoveUserFromWorkSpace(WorkspaceDto workspaceDto, string userId)
+        {
+            if (workspaceDto == null)
+            {
+                _snackbar.Add("无效的工作区信息", Severity.Warning);
+                return;
+            }
+
+            // 找到中间表记录
+            var userWorkspace = await _dbContext.UserWorkspaces
+                .FirstOrDefaultAsync(uw => uw.UserId == userId && uw.WorkspaceId == workspaceDto.Id);
+
+            if (userWorkspace == null)
+            {
+                _snackbar.Add("该用户不在此工作区", Severity.Info);
+                return;
+            }
+
+            // 删除关联
+            _dbContext.UserWorkspaces.Remove(userWorkspace);
+            await _dbContext.SaveChangesAsync();
+
+            _snackbar.Add($"已将用户移出工作区 \"{workspaceDto.Name}\"", Severity.Success);
+        }
+
     }
 
     public class UserDto
