@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using MudBlazor;
 using MudBlazor.Services;
 using SyncArea.Components;
@@ -13,8 +14,9 @@ using SyncArea.Models.Options;
 using SyncArea.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var port = builder.Configuration["Port"];
 
-builder.WebHost.ConfigureKestrel(x => x.ListenAnyIP(80));
+builder.WebHost.ConfigureKestrel(x => x.ListenAnyIP(int.Parse(port ?? "")));
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 // ≈‰÷√ EF Core ∫Õ SQLite
@@ -93,6 +95,25 @@ if (!app.Environment.IsDevelopment())
 }
 
 //app.UseHttpsRedirection();
+
+var imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "images");
+if (!Directory.Exists(imagesPath))
+{
+    Directory.CreateDirectory(imagesPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/images"
+});
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "images")),
+    RequestPath = "/images"
+});
 
 
 app.UseAntiforgery();

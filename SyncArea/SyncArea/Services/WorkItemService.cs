@@ -38,12 +38,25 @@ namespace SyncArea.Services
                 Remark = remark,
                 WorkspaceId = workspaceId,
                 UserId = userId,
-                Photos = images?.Select(img => new Photo
-                {
-                    Id = Guid.NewGuid(),
-                    ImageData = img
-                }).ToList() ?? new List<Photo>()
+                Photos = new List<Photo>()
             };
+
+            if (images != null && images.Any())
+            {
+                foreach (var image in images)
+                {
+                    // 保存图片到 wwwroot/images
+                    var fileName = $"{Guid.NewGuid()}.jpg";
+                    var filePath = Path.Combine("wwwroot/images", fileName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(filePath)!); // 确保目录存在
+                    await File.WriteAllBytesAsync(filePath, image);
+                    workItem.Photos.Add(new Photo
+                    {
+                        Id = Guid.NewGuid(),
+                        ImageUrl = $"/images/{fileName}" // 存储相对路径
+                    });
+                }
+            }
 
             _dbContext.WorkItems.Add(workItem);
             await _dbContext.SaveChangesAsync();
@@ -72,7 +85,7 @@ namespace SyncArea.Services
                     Remark = wi.Remark,
                     Username = wi.User != null ? wi.User.UserName : "未知用户",
                     PhotoCount = wi.Photos.Count,
-                    PhotoPreviews = wi.Photos.Take(5).Select(p => Convert.ToBase64String(p.ImageData)).ToList()
+                    PhotoUrls = wi.Photos.Take(5).Select(p => p.ImageUrl).ToList()
                 })
                 .ToListAsync();
 
@@ -92,6 +105,6 @@ namespace SyncArea.Services
         public string? Remark { get; set; }
         public string Username { get; set; } = string.Empty;
         public int PhotoCount { get; set; }
-        public List<string> PhotoPreviews { get; set; } = new();
+        public List<string> PhotoUrls { get; set; } = new(); // 使用 URL 替代 Base64
     }
 }

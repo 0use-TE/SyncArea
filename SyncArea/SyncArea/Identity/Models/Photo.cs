@@ -9,7 +9,7 @@ namespace SyncArea.Identity.Models
         public Guid Id { get; set; }
 
         [Required]
-        public byte[] ImageData { get; set; } = Array.Empty<byte>(); // 二进制图片
+        public string? ImageUrl { get; set; }  // 二进制图片
 
         public Guid? WorkItemId { get; set; }
 

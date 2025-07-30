@@ -16,7 +16,7 @@
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
             <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" />
-            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged"     MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
                 <ActivatorContent>
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Upload" Disabled="@(Images.Count >= 10)">上传图片</MudButton>
                 </ActivatorContent>
@@ -27,7 +27,7 @@
                 <MudGrid Class="mt-2">
                     @foreach (var preview in ImagePreviews.Select((value, index) => new { Value = value, Index = index }))
                     {
-                        <MudItem  sm="4"  md="3" lg="2">
+                        <MudItem @key="preview" xs="6" sm="4" md="3" lg="2">
                             <MudCard Class="gallery-card">
                                 <MudBadge Icon="@Icons.Material.Filled.Close" Color="Color.Error" Overlap="true" Origin="Origin.TopRight" OnClick="() => RemoveImage(preview.Index)">
                                     <MudImage Src="@preview.Value" Alt="预览图片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
@@ -67,7 +67,7 @@
     private CreateWorkItemModel Model { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
     private List<byte[]> Images { get; set; } = new();
-    private List<string> ImagePreviews { get; set; } = new();
+    private List<string> ImagePreviews { get; set; } = new(); // 用于客户端预览的 Base64
 
     public class CreateWorkItemModel
     {
@@ -89,6 +89,7 @@
             await stream.CopyToAsync(memoryStream);
             var imageData = memoryStream.ToArray();
             Images.Add(imageData);
+            // 生成 Base64 仅用于预览
             ImagePreviews.Add($"data:image/{file.ContentType.Split('/')[1]};base64,{Convert.ToBase64String(imageData)}");
         }
         if (Images.Count > 10)

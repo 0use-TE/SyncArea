@@ -9,35 +9,33 @@
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 
-<MudCard Elevation="0" >
+<MudCard Elevation="0">
     <MudCardHeader Class="d-flex flex-column">
         <MudText Typo="Typo.h5" Color="Color.Primary" Align="Align.Left">工作区名称: @Workspace?.Name</MudText>
         <br />
         <MudSpacer />
         <div class="d-flex ml-auto">
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Href="/" >首页</MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog" Class="mr-1">添加</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" Href="/">首页</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowCreateWorkItemDialog" Class="mr-1">添加</MudButton>
         </div>
     </MudCardHeader>
     <MudCardContent>
-
+            @if (IsLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (GroupedWorkItems.Any())
+            {
+                <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
+            }
+            else
+            {
+                <MudText>暂无工作项</MudText>
+            }
     </MudCardContent>
 </MudCard>
-<div>
 
-        @if (IsLoading)
-{
-    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-}
-else if (GroupedWorkItems.Any())
-{
-    <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
-}
-else
-{
-    <MudText>暂无工作项</MudText>
-}
-</div>
+
 @code {
     [Parameter] public Guid WorkspaceId { get; set; }
     private WorkspaceDto? Workspace { get; set; }

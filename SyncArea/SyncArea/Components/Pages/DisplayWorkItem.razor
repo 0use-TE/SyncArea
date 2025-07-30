@@ -1,31 +1,42 @@
-﻿@using SyncArea.Components.Pages.Admin
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using MudBlazor
+@using SyncArea.Components.Pages.Admin
+@using SyncArea.Services
 @inject IDialogService DialogService
-<div id="container" style="max-height:80vh;overflow:auto">
+@inject IJSRuntime JSRuntime
 
-        <MudXOutline ScrollContainerSelector="#container" >
-            @if(GroupedWorkItems!=null)
+<div id="container" style="max-height:80vh;overflow:auto">
+    <MudXOutline ScrollContainerSelector="#container">
+        @if (GroupedWorkItems != null)
+        {
+            foreach (var group in GroupedWorkItems)
             {
-                foreach (var group in GroupedWorkItems)
-                {
-                    var date = group.Key.Date.ToString("yyyy-MM-dd");
-                    <MudXOutlineSection Title="@date">
-                        <MudExpansionPanels Outlined Gutters=false>
-                            <MudExpansionPanel Text="@date" HeaderClass="pa-2" Gutters=false>
-                                <MudPaper Outlined  Class="pa-2">
-                                    @foreach (var item in group)
-                                    {   
+                var date = group.Key.Date.ToString("yyyy-MM-dd");
+                <MudXOutlineSection Title="@date">
+                    <MudExpansionPanels Outlined Gutters="false">
+                        <MudExpansionPanel Text="@date" HeaderClass="pa-2" Gutters="false">
+                            <MudPaper Outlined Class="pa-2">
+                                @foreach (var item in group)
+                                {
+                                    <div @key="item">
                                         <MudText>创建者: @item.Username</MudText>
                                         <MudText>备注: @(item.Remark ?? "无")</MudText>
                                         <MudText>图片数: @item.PhotoCount</MudText>
-                                        @if (item.PhotoPreviews.Any())
+                                        @if (item.PhotoUrls.Any())
                                         {
                                             <MudGrid Class="mt-2">
-                                                @foreach (var preview in item.PhotoPreviews)
+                                                @foreach (var photoUrl in item.PhotoUrls)
                                                 {
-                                                    var img = $"data:image/jpeg;base64,{preview}";
-                                                    <MudItem xs="6" sm="4" md="3">
-                                                        <MudButton OnClick="@(()=>LookImage(img))">
-                                                        <MudImage  ObjectPosition=ObjectPosition.Center Style="aspect-ratio:1" Src="@img" Alt="照片" Fluid ObjectFit="ObjectFit.Cover" />
+                                                    <MudItem xs="6" sm="4" md="3" @key="photoUrl">
+                                                        <MudButton OnClick="@(() => LookImage(photoUrl))">
+                                                            <MudImage Src="./loading.svg"
+                                                                      data-src="@photoUrl"
+                                                                      Alt="照片"
+                                                                      Fluid
+                                                                      ObjectFit="ObjectFit.Cover"
+                                                                      ObjectPosition="ObjectPosition.Center"
+                                                                      Style="aspect-ratio:1"
+                                                                      Class="lazy-image" />
                                                         </MudButton>
                                                     </MudItem>
                                                 }
@@ -36,21 +47,30 @@
                                             <MudText Color="Color.Info">无照片</MudText>
                                         }
                                         <br />
-                                        <MudDivider ></MudDivider>
-                                    }
-                                </MudPaper>
-                            </MudExpansionPanel>
-                        </MudExpansionPanels>
-                        <br />
-                    </MudXOutlineSection>
-                }
+                                        <MudDivider />
+                                    </div>
+                                }
+                            </MudPaper>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                    <br />
+                </MudXOutlineSection>
             }
-        </MudXOutline>
-
+        }
+    </MudXOutline>
 </div>
-@code{
+
+@code {
     [Parameter]
-    public IEnumerable<IGrouping<DateTime, WorkItemDto>>? GroupedWorkItems{ get; set; }
+    public IEnumerable<IGrouping<DateTime, WorkItemDto>>? GroupedWorkItems { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initLazyLoad");
+        }
+    }
 
     private async Task LookImage(string url)
     {
@@ -58,13 +78,13 @@
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.ExtraLarge,
-                 NoHeader=true,
-                  BackdropClick=true
+                NoHeader = true,
+                BackdropClick = true
             };
-        var parameters= new DialogParameters<LookImage>
-            {
-                { "Url", url }
-            };
-        await DialogService.ShowAsync<LookImage>("查看图片",parameters,options);
+        var parameters = new DialogParameters<LookImage>
+        {
+            { "Url", url }
+        };
+        await DialogService.ShowAsync<LookImage>("查看图片", parameters, options);
     }
 }
