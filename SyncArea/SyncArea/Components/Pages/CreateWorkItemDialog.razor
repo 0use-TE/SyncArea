@@ -19,7 +19,7 @@
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
             <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" Required="true" />
-            <input type="file" multiple accept=".jpg,.jpeg,.png" id="fileInput" style="margin-top: 8px;" />
+            <input type="file" multiple accept="image/*"  id="fileInput" style="margin-top: 8px;" />
             <MudText Typo="Typo.body2" Class="mt-2" Id="imageCount">已选择 0 张图片</MudText>
             <div id="imagePreviewContainer" class="mt-2" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
             @if (!string.IsNullOrEmpty(ErrorMessage))

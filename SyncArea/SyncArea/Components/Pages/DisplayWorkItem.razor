@@ -4,15 +4,14 @@
 @using SyncArea.Services
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
-
-<div id="container" style="max-height:80vh;overflow:auto">
-    <MudXOutline ScrollContainerSelector="#container">
+    <div id="container"  style="max-height:80vh;overflow:scroll">
+    <MudXOutline ScrollContainerSelector="#container"  StyleVariant="OutlineStyleVariant.Bullet" >
         @if (GroupedWorkItems != null)
         {
             foreach (var group in GroupedWorkItems)
             {
                 var date = group.Key.Date.ToString("yyyy-MM-dd");
-                <MudXOutlineSection Title="@date">
+                <MudXOutlineSection Title="@date" >
                     <MudExpansionPanels Outlined Gutters="false">
                         <MudExpansionPanel Text="@date" HeaderClass="pa-2" Gutters="false">
                             <MudPaper Outlined Class="pa-2">
@@ -79,7 +78,7 @@
                 CloseButton = false,
                 MaxWidth = MaxWidth.ExtraLarge,
                 NoHeader = true,
-                BackdropClick = true
+                 CloseOnEscapeKey=true
             };
         var parameters = new DialogParameters<LookImage>
         {

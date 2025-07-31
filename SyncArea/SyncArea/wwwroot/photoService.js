@@ -73,15 +73,12 @@ window.uploadWorkItem = async (url, formData) => {
             form.append('Images', selectedFiles[i]);
         }
 
-
         const response = await fetch(url, {
             method: 'POST',
             body: form
         });
-
         if (response.ok) {
             const data = await response.json();
-            console.log(data);
             return { Success: true, Data: data, Error: '' };
         } else {
             const error = await response.text();
