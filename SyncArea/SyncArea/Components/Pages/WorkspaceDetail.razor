@@ -40,7 +40,7 @@
     [Parameter] public Guid WorkspaceId { get; set; }
     private WorkspaceDto? Workspace { get; set; }
     private List<WorkItemDto> WorkItems { get; set; } = new();
-    private IEnumerable<IGrouping<DateTime, WorkItemDto>> GroupedWorkItems => WorkItems.GroupBy(wi => wi.Date.Date);
+    private IEnumerable<IGrouping<DateTime, WorkItemDto>> GroupedWorkItems => WorkItems.GroupBy(wi => wi.Date.Date).OrderBy(x=>x.Key);
     private bool IsLoading { get; set; } = true;
 
     protected override async Task OnInitializedAsync()

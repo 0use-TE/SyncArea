@@ -1,6 +1,7 @@
 ﻿let selectedFiles = [];
 
 window.initializeFileInput = (inputId, containerId, countId) => {
+    selectedFiles = [];
     const input = document.getElementById(inputId);
     const container = document.getElementById(containerId);
     const countElement = document.getElementById(countId);
@@ -62,7 +63,6 @@ window.initializeFileInput = (inputId, containerId, countId) => {
 window.uploadWorkItem = async (url, formData) => {
     try {
         const form = new FormData();
-
         // 确保字段不为空
         form.append('UserId', formData.userId || '');
         form.append('WorkspaceId', formData.workspaceId || '');
