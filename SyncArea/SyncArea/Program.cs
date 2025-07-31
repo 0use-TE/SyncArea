@@ -11,6 +11,7 @@ using SyncArea.Components;
 using SyncArea.Identity;
 using SyncArea.Identity.Models;
 using SyncArea.Models.Options;
+using SyncArea.Pages.Account;
 using SyncArea.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -84,6 +85,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
 
+//webApi
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -116,6 +120,9 @@ app.MapRazorPages().WithStaticAssets();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+//控制器
+app.MapControllers();
 //认证与授权服务
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MudBlazor;
 using SyncArea.Identity.Models;
 
 namespace SyncArea.Services
@@ -7,12 +6,10 @@ namespace SyncArea.Services
     public class WorkItemService
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly ISnackbar _snackbar;
 
-        public WorkItemService(ApplicationDbContext dbContext, ISnackbar snackbar)
+        public WorkItemService(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
-            _snackbar = snackbar;
         }
 
         public async Task<WorkItemDto> CreateWorkItemAsync(string userId, Guid workspaceId, string? remark, DateTime createDate, List<byte[]>? images)
@@ -22,15 +19,13 @@ namespace SyncArea.Services
                 var workspace = await _dbContext.Workspaces.FindAsync(workspaceId);
                 if (workspace == null)
                 {
-                    _snackbar.Add("工作区不存在", Severity.Error);
-                    return null; // 返回 null 表示失败
+                    throw new Exception("工作区不存在");
                 }
 
                 var user = await _dbContext.Users.FindAsync(userId);
                 if (user == null)
                 {
-                    _snackbar.Add("用户不存在", Severity.Error);
-                    return null;
+                    throw new Exception("用户不存在");
                 }
 
                 var workItem = new WorkItem
@@ -61,7 +56,6 @@ namespace SyncArea.Services
                 }
 
                 _dbContext.WorkItems.Add(workItem);
-                await _dbContext.SaveChangesAsync();
 
                 foreach (var photo in workItem.Photos)
                 {
@@ -80,16 +74,15 @@ namespace SyncArea.Services
                     PhotoCount = workItem.Photos.Count
                 };
 
-                _snackbar.Add("工作项创建成功", Severity.Success);
                 return workItemDto;
             }
             catch (Exception ex)
             {
-                _snackbar.Add($"创建工作项失败: {ex.Message}", Severity.Error);
                 Console.WriteLine($"Error creating work item: {ex.Message}");
-                return null;
+                throw; // 抛出异常，客户端处理
             }
         }
+
         public async Task<List<WorkItemDto>> GetWorkItemsByWorkspaceAsync(Guid workspaceId)
         {
             var workItems = await _dbContext.WorkItems
@@ -108,12 +101,7 @@ namespace SyncArea.Services
                 })
                 .ToListAsync();
 
-            if (!workItems.Any())
-            {
-                _snackbar.Add("当前工作区暂无工作项", Severity.Info);
-            }
-
-            return workItems;
+            return workItems; // 移除 Snackbar 通知
         }
     }
 
@@ -124,6 +112,6 @@ namespace SyncArea.Services
         public string? Remark { get; set; }
         public string Username { get; set; } = string.Empty;
         public int PhotoCount { get; set; }
-        public List<string> PhotoUrls { get; set; } = new(); // 使用 URL 替代 Base64
+        public List<string> PhotoUrls { get; set; } = new();
     }
 }

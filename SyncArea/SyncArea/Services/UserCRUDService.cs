@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SyncArea.Identity.Models;
 using System.Security.Claims;
 
-namespace SyncArea.Services
+namespace SyncArea.Pages.Account
 {
     public class UserCRUDService
     {

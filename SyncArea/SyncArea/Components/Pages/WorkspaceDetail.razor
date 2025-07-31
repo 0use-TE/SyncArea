@@ -54,9 +54,6 @@
         WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
         IsLoading = false;
     }
-    protected override async Task OnParametersSetAsync()
-    {
-    }
     private async Task ShowCreateWorkItemDialog()
     {
         var parameters = new DialogParameters
@@ -64,6 +61,7 @@
             { "WorkspaceId", WorkspaceId },
             { "OnWorkItemCreated", EventCallback.Factory.Create<WorkItemDto>(this, async (WorkItemDto newWorkItem) =>
             {
+               // Console.WriteLine("执行");
                 WorkItems.Add(newWorkItem); // 直接添加新工作项
                await InvokeAsync(StateHasChanged); 
         await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发

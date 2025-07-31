@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using SyncArea.Services;
+using SyncArea.Pages.Account;
 
 namespace SyncArea.Identity
 {

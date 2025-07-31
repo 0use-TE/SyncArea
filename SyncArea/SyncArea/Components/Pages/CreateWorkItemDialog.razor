@@ -1,10 +1,13 @@
 ﻿@using MudBlazor
+@using SyncArea.Pages.Account
 @using SyncArea.Services
 @using SyncArea.Identity.Models
+@using System.Text.Json
 @inject WorkItemService WorkItemService
 @inject UserManager<ApplicationUser> UserManager
 @inject ISnackbar Snackbar
 @inject UserCRUDService UserCRUDService
+@inject IJSRuntime JSRuntime
 @inherits MudComponentBase
 
 <MudDialog>
@@ -15,28 +18,10 @@
         <EditForm Model="@Model" OnValidSubmit="HandleCreateWorkItem">
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="备注（可选）" @bind-Value="Model.Remark" />
-            <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" />
-            <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" MaximumFileCount="10" Accept=".jpg,.jpeg,.png">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Upload" Disabled="@(Images.Count >= 10)">上传图片</MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
-            @if (ImagePreviews.Any())
-            {
-                <MudText Typo="Typo.body2" Class="mt-2">已选择 @ImagePreviews.Count 张图片</MudText>
-                <MudGrid Class="mt-2">
-                    @foreach (var preview in ImagePreviews.Select((value, index) => new { Value = value, Index = index }))
-                    {
-                        <MudItem @key="preview" xs="6" sm="4" md="3" lg="2">
-                            <MudCard Class="gallery-card">
-                                <MudBadge Icon="@Icons.Material.Filled.Close" Color="Color.Error" Overlap="true" Origin="Origin.TopRight" OnClick="() => RemoveImage(preview.Index)">
-                                    <MudImage Src="@preview.Value" Alt="预览图片" Width="100" Height="100" ObjectFit="ObjectFit.Cover" />
-                                </MudBadge>
-                            </MudCard>
-                        </MudItem>
-                    }
-                </MudGrid>
-            }
+            <MudTextField Variant="Variant.Outlined" Format="yyyy-MM-dd" Label="日期" InputType="InputType.Date" @bind-Value="Model.Date" Required="true" />
+            <input type="file" multiple accept=".jpg,.jpeg,.png" id="fileInput" style="margin-top: 8px;" />
+            <MudText Typo="Typo.body2" Class="mt-2" Id="imageCount">已选择 0 张图片</MudText>
+            <div id="imagePreviewContainer" class="mt-2" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 <MudAlert Severity="Severity.Error" Class="mt-2">@ErrorMessage</MudAlert>
@@ -51,100 +36,149 @@
 
 <style>
     .gallery-card {
-        transition: transform 0.2s;
+    transition: transform 0.2s;
+    position: relative;
+    width: 100px;
+    height: 100px;
     }
 
-        .gallery-card:hover {
-            transform: scale(1.05);
-        }
+    .gallery-card:hover {
+    transform: scale(1.05);
+    }
+
+    .delete-button {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    }
 </style>
 
 @code {
     [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public Guid WorkspaceId { get; set; }
-    [Parameter] public EventCallback<WorkItemDto> OnWorkItemCreated { get; set; } // 修改为 EventCallback<WorkItemDto>
+    [Parameter] public EventCallback<WorkItemDto> OnWorkItemCreated { get; set; }
 
     private CreateWorkItemModel Model { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
-    private List<byte[]> Images { get; set; } = new();
-    private List<string> ImagePreviews { get; set; } = new();
 
     public class CreateWorkItemModel
     {
         public string? Remark { get; set; }
-        public DateTime Date { get; set; } = DateTime.Now;
+        public DateTime Date { get; set; } = DateTime.Now; // 默认值为当前时间
     }
 
-    private async Task OnFilesChanged(IReadOnlyList<IBrowserFile> files)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        foreach (var file in files)
+        if (firstRender)
         {
-            if (file.Size > 10 * 1024 * 1024)
-            {
-                Snackbar.Add($"图片 {file.Name} 超过 10MB", Severity.Error);
-                continue;
-            }
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
-            var imageData = memoryStream.ToArray();
-            Images.Add(imageData);
-            ImagePreviews.Add($"data:image/{file.ContentType.Split('/')[1]};base64,{Convert.ToBase64String(imageData)}");
-        StateHasChanged();
-        }
-        if (Images.Count > 10)
-        {
-            Images = Images.Take(10).ToList();
-            ImagePreviews = ImagePreviews.Take(10).ToList();
-            Snackbar.Add("最多上传 10 张图片", Severity.Warning);
-        }
-    }
-
-    private void RemoveImage(int index)
-    {
-        if (index >= 0 && index < Images.Count)
-        {
-            Images.RemoveAt(index);
-            ImagePreviews.RemoveAt(index);
-            Snackbar.Add("图片已移除", Severity.Info);
-            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("initializeFileInput", "fileInput", "imagePreviewContainer", "imageCount");
         }
     }
 
     private async Task HandleCreateWorkItem()
     {
-        Console.WriteLine($"Images Count: {Images.Count}, Image Sizes: {string.Join(", ", Images.Select(i => i.Length))}");
         var user = UserCRUDService.CurrentUser;
-        if (user == null)
+        if (user == null || string.IsNullOrEmpty(user.Id))
         {
-            ErrorMessage = "用户未登录";
-            Snackbar.Add("用户未登录", Severity.Error);
+            ErrorMessage = "用户未登录或 UserId 无效";
+            Snackbar.Add(ErrorMessage, Severity.Error);
+            return;
+        }
+
+        // 验证 WorkspaceId
+        if (WorkspaceId == Guid.Empty)
+        {
+            ErrorMessage = "工作区 ID 无效";
+            Snackbar.Add(ErrorMessage, Severity.Error);
+            return;
+        }
+
+        // 验证 Date
+        if (Model.Date == default)
+        {
+            ErrorMessage = "日期不能为空";
+            Snackbar.Add(ErrorMessage, Severity.Error);
             return;
         }
 
         try
         {
-            var newWorkItem = await WorkItemService.CreateWorkItemAsync(user.Id, WorkspaceId, Model.Remark, Model.Date, Images.Any() ? Images : null);
-            if (newWorkItem == null)
+            var formData = new
             {
-                ErrorMessage = "创建工作项失败";
-                Snackbar.Add("创建工作项失败", Severity.Error);
-                return;
-            }
+                UserId = user.Id,
+                WorkspaceId = WorkspaceId.ToString(),
+                Remark = Model.Remark ?? "",
+                Date = Model.Date.ToString("o") // ISO 8601 格式
+            };
 
-            Snackbar.Add("工作项创建成功", Severity.Success);
-            await OnWorkItemCreated.InvokeAsync(newWorkItem); // 传递 WorkItemDto
-            MudDialog.Close(DialogResult.Ok(true));
+
+            var result = await JSRuntime.InvokeAsync<UploadResult>("uploadWorkItem","/api/workitems", formData);
+            if (result.Success)
+            {
+                //var workItem = JsonSerializer.Deserialize<WorkItemDto>(JsonSerializer.SerializeToDocument(result.Data));
+                if (result.Data!= null)
+                {
+                    Snackbar.Add("工作项创建成功", Severity.Success);
+                    await OnWorkItemCreated.InvokeAsync(result.Data);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    ErrorMessage = "创建工作项失败：返回数据无效";
+                    Snackbar.Add(ErrorMessage, Severity.Error); 
+                }
+            }
+            else
+            {
+                // 解析详细的验证错误
+                try
+                {
+                    var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ValidationErrorResponse>(result.Error);
+                    var errors = errorResponse?.Errors?.Select(e => $"{e.Key}: {string.Join(", ", e.Value)}") ?? new[] { result.Error };
+                    ErrorMessage = $"创建工作项失败: {string.Join("; ", errors)}";
+                }
+                catch
+                {
+                    ErrorMessage = $"创建工作项失败: {result.Error}";
+                }
+                Snackbar.Add(ErrorMessage, Severity.Error);
+            }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"创建工作项失败: {ex.Message}";
-            Snackbar.Add($"创建工作项失败: {ex.Message}", Severity.Error);
+            Snackbar.Add(ErrorMessage, Severity.Error);
         }
     }
 
-    private void Cancel()
+    private async Task Cancel()
     {
+        await JSRuntime.InvokeVoidAsync("clearFiles");
         MudDialog.Cancel();
+    }
+
+    private class UploadResult
+    {
+        public bool Success { get; set; }
+        public WorkItemDto? Data { get; set; } 
+        public string Error { get; set; } = string.Empty;
+    }
+
+    private class ValidationErrorResponse
+    {
+        public string Type { get; set; }
+        public string Title { get; set; }
+        public int Status { get; set; }
+        public Dictionary<string, string[]> Errors { get; set; }
+        public string TraceId { get; set; }
     }
 }
