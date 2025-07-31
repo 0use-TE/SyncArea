@@ -70,7 +70,7 @@ namespace SyncArea.Services
                     Username = user.UserName ?? "Unknown",
                     Remark = workItem.Remark,
                     Date = workItem.Date,
-                    PhotoUrls = workItem.Photos.Select(p => "images/" + p.ImageUrl).ToList(),
+                    PhotoUrls = workItem.Photos.Select(p => p.ImageUrl ?? string.Empty).ToList(),
                     PhotoCount = workItem.Photos.Count
                 };
 
@@ -78,7 +78,6 @@ namespace SyncArea.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating work item: {ex.Message}");
                 throw; // 抛出异常，客户端处理
             }
         }
@@ -97,7 +96,8 @@ namespace SyncArea.Services
                     Remark = wi.Remark,
                     Username = wi.User != null ? wi.User.UserName : "未知用户",
                     PhotoCount = wi.Photos.Count,
-                    PhotoUrls = wi.Photos.Select(p => "images/" + p.ImageUrl).ToList()
+                    PhotoUrls = wi.Photos.Select(p => "images/" + p.ImageUrl).ToList(),
+                    Name = wi.User != null ? wi.User.Name : "暂未设置",
                 })
                 .ToListAsync();
 
@@ -111,6 +111,7 @@ namespace SyncArea.Services
         public DateTime Date { get; set; }
         public string? Remark { get; set; }
         public string Username { get; set; } = string.Empty;
+        public string? Name { get; set; }
         public int PhotoCount { get; set; }
         public List<string> PhotoUrls { get; set; } = new();
     }

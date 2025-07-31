@@ -26,7 +26,7 @@
                             <MudCard>
                                 <MudCardContent>
                                     <MudText Typo="Typo.h6">@workspace.Name</MudText>
-                                    <MudText>房间号: @workspace.RoomNumber</MudText>
+                                    <MudText>项目号: @workspace.RoomNumber</MudText>
                                     <MudText>创建时间: @workspace.CreatedAt.ToString("yyyy-MM-dd")</MudText>
                                 </MudCardContent>
                                 <MudCardActions>
@@ -43,7 +43,6 @@
 
 @code {
 
-    [Inject] private UserManager<ApplicationUser> _userManager { get; set; } = null!;
     private List<WorkspaceDto> Workspaces { get; set; } = new();
 
     protected override async Task OnInitializedAsync()

@@ -18,7 +18,7 @@
                                 @foreach (var item in group)
                                 {
                                     <div @key="item">
-                                        <MudText>创建者: @item.Username</MudText>
+                                        <MudText>创建者: @item.Name</MudText>
                                         <MudText>备注: @(item.Remark ?? "无")</MudText>
                                         <MudText>图片数: @item.PhotoCount</MudText>
                                         @if (item.PhotoUrls.Any())

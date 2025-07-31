@@ -1,5 +1,6 @@
 ﻿@page "/admin"
 @using Microsoft.AspNetCore.Authorization
+@using SyncArea.Components.Pages.Admin.Dialog
 @using SyncArea.Misc
 @attribute [Authorize(Roles = "Admin")]
 @inject UserService UserService
@@ -19,8 +20,8 @@
                 <MudDataGrid @ref="UserGrid" ServerData="LoadUsers" T="UserDto" MultiSelection="false" Style="max-height:60vh;overflow:auto" FixedFooter FixedHeader>
                     <Columns>
                         <PropertyColumn Title="账号" Property="x=>x.Username"></PropertyColumn>
-                        <PropertyColumn Title="角色" Property="x=>x.Role"></PropertyColumn>
                         <PropertyColumn Title="姓名" Property="x=>x.Name"></PropertyColumn>
+                        <PropertyColumn Title="角色" Property="x=>x.Role"></PropertyColumn>
                         <TemplateColumn Title="操作">
                             <CellTemplate>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditUserDialog(context.Item)">修改</MudButton>

@@ -10,7 +10,7 @@
 @inject IJSRuntime JSRuntime
 @inherits MudComponentBase
 
-<MudDialog>
+<MudDialog Class="relative">
     <TitleContent>
         <MudText Typo="Typo.h6">添加工作项</MudText>
     </TitleContent>
@@ -31,6 +31,9 @@
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">取消</MudButton>
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleCreateWorkItem">创建</MudButton>
+        <MudOverlay Visible=isSending Absolute DarkBackground>
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+        </MudOverlay>
     </DialogActions>
 </MudDialog>
 
@@ -40,10 +43,6 @@
     position: relative;
     width: 100px;
     height: 100px;
-    }
-
-    .gallery-card:hover {
-    transform: scale(1.05);
     }
 
     .delete-button {
@@ -66,7 +65,7 @@
     [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public Guid WorkspaceId { get; set; }
     [Parameter] public EventCallback<WorkItemDto> OnWorkItemCreated { get; set; }
-
+    private bool isSending;
     private CreateWorkItemModel Model { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -86,6 +85,8 @@
 
     private async Task HandleCreateWorkItem()
     {
+        isSending=true;
+        await InvokeAsync(StateHasChanged);
         var user = UserCRUDService.CurrentUser;
         if (user == null || string.IsNullOrEmpty(user.Id))
         {
@@ -119,7 +120,6 @@
                 Remark = Model.Remark ?? "",
                 Date = Model.Date.ToString("o") // ISO 8601 格式
             };
-
 
             var result = await JSRuntime.InvokeAsync<UploadResult>("uploadWorkItem","/api/workitems", formData);
             if (result.Success)
@@ -175,10 +175,10 @@
 
     private class ValidationErrorResponse
     {
-        public string Type { get; set; }
-        public string Title { get; set; }
+        public string? Type { get; set; }
+        public string? Title { get; set; }
         public int Status { get; set; }
-        public Dictionary<string, string[]> Errors { get; set; }
-        public string TraceId { get; set; }
+        public Dictionary<string, string[]> Errors { get; set; } = new Dictionary<string, string[]>();
+        public string? TraceId { get; set; }
     }
 }

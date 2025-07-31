@@ -52,9 +52,12 @@ namespace SyncArea.Pages.Account
                 var result = await _userManager.ChangePasswordAsync(CurrentUser, CurrentUser.PasswordHash, password);
                 if (result.Succeeded)
                     return true;
-                else return false;
+                else
+                {
+                    return false;
+                }
             }
-            catch
+            catch (Exception ex)
             {
                 return false;
             }

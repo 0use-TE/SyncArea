@@ -21,17 +21,17 @@
     </MudCardHeader>
     <MudCardContent>
             @if (IsLoading)
-            {
-                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-            }
-            else if (GroupedWorkItems.Any())
-            {
-                <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
-            }
-            else
-            {
-                <MudText>暂无工作项</MudText>
-            }
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        }
+        else if (GroupedWorkItems.Any())
+        {
+            <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
+        }
+        else
+        {
+            <MudText>暂无工作项</MudText>
+        }
     </MudCardContent>
 </MudCard>
 
@@ -61,12 +61,11 @@
             { "WorkspaceId", WorkspaceId },
             { "OnWorkItemCreated", EventCallback.Factory.Create<WorkItemDto>(this, async (WorkItemDto newWorkItem) =>
             {
-               // Console.WriteLine("执行");
                 WorkItems.Add(newWorkItem); // 直接添加新工作项
-               await InvokeAsync(StateHasChanged); 
-        await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发
+               await InvokeAsync(StateHasChanged);
+                await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发
 
-            }) }
+            })}
         };
         await DialogService.ShowAsync<CreateWorkItemDialog>("添加工作项", parameters, AppliationSettings.DialogOptions);
     }

@@ -15,9 +15,13 @@ using SyncArea.Pages.Account;
 using SyncArea.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-var port = builder.Configuration["Port"];
+//当前是生产环境的话
+if (builder.Environment.IsProduction())
+{
+    var port = builder.Configuration["Port"];
 
-builder.WebHost.ConfigureKestrel(x => x.ListenAnyIP(int.Parse(port ?? "")));
+    builder.WebHost.ConfigureKestrel(x => x.ListenAnyIP(int.Parse(port ?? "")));
+}
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 // 配置 EF Core 和 SQLite

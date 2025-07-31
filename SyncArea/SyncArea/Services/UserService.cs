@@ -133,8 +133,7 @@ namespace SyncArea.Services
                 .Select(u => new UserDto
                 {
                     Id = u.Id,
-                    Username = u.UserName,
-                    Email = u.Email,
+                    Username = u.UserName ?? string.Empty,
                     Name = u.Name
                 });
 
@@ -342,7 +341,6 @@ namespace SyncArea.Services
         public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string? Name { get; set; }
-        public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
     }
 }

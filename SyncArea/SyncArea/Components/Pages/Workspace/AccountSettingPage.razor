@@ -7,8 +7,10 @@
 <div class="d-flex flex-column align-center">
     <MudContainer MaxWidth="MaxWidth.Medium">
         <MudCard>
-            <MudCardHeader>
+            <MudCardHeader Class="d-flex ">
                 <MudText Align="Align.Left" Typo="Typo.h5" Color="Color.Primary">个人资料</MudText>
+                <MudSpacer></MudSpacer>
+                    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">工作区</MudButton>
             </MudCardHeader>
             <MudCardContent>
                 <MudText>姓名: @UserCRUDService?.CurrentUser?.Name</MudText>
