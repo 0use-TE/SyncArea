@@ -26,4 +26,9 @@
     <PackageReference Include="MudBlazor" Version="8.*" />
     <PackageReference Include="MudX.MudBlazor.Extension" Version="8.10.0" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Docs\" />
+  </ItemGroup>
 </Project>

@@ -2,46 +2,114 @@
 @using SyncArea.Pages.Account
 @inject UserCRUDService UserCRUDService
 @inject ISnackbar SnackBar
-@attribute [Authorize]
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@attribute [Authorize]
+
 <div class="d-flex flex-column align-center">
     <MudContainer MaxWidth="MaxWidth.Medium">
         <MudCard>
-            <MudCardHeader Class="d-flex ">
+            <MudCardHeader Class="d-flex">
                 <MudText Align="Align.Left" Typo="Typo.h5" Color="Color.Primary">个人资料</MudText>
                 <MudSpacer></MudSpacer>
-                    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">工作区</MudButton>
+
+                @if (!isEditing)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@StartEditing">编辑</MudButton>
+                }
             </MudCardHeader>
+
             <MudCardContent>
-                <MudText>姓名: @UserCRUDService?.CurrentUser?.Name</MudText>
-                <MudText>账号：@UserCRUDService?.CurrentUser?.UserName</MudText>
+                <MudTextField Variant="Variant.Outlined"
+                              Label="姓名:"
+                              Placeholder="请输入姓名"
+                              @bind-Value=editableUser.Name
+                              ReadOnly="@(!isEditing)">
+                </MudTextField>
+
+                <MudTextField Variant="Variant.Outlined"
+                              Label="账号:"
+                              @bind-Value=editableUser.UserName
+                              Placeholder="请输入账号"
+                              ReadOnly="@(!isEditing)">
+                </MudTextField>
             </MudCardContent>
+
             <MudCardActions>
                 <div class="d-flex flex-column gap-2" style="width:100%">
-                    <MudButton Class="ml-auto" Color="Color.Primary" Variant="Variant.Outlined" OnClick="ChangeData">修改信息</MudButton>
-                    <MudButton Class="ml-auto" Color="Color.Secondary" Variant="Variant.Outlined" OnClick="ChangePassword">修改密码</MudButton>
-                    <MudButton Class="ml-auto" Color="Color.Error" Href="" Variant="Variant.Outlined" OnClick="@(()=>NavigationManager.NavigateTo("/account/logout",true))">登出</MudButton>
-
+                    @if (isEditing)
+                    {
+                        <div class="d-flex justify-end gap-2">
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveChanges">保存</MudButton>
+                            <MudButton Color="Color.Default" Variant="Variant.Outlined" OnClick="CancelEditing">取消</MudButton>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudButton Class="ml-auto" Color="Color.Secondary" Variant="Variant.Outlined" OnClick="ChangePassword">修改密码</MudButton>
+                        <MudButton Color="Color.Error" Class="ml-auto"
+                                   Variant="Variant.Outlined"
+                                   OnClick="@(()=>NavigationManager.NavigateTo("/account/logout",true))">
+                            登出
+                        </MudButton>
+                    }
                 </div>
             </MudCardActions>
         </MudCard>
     </MudContainer>
 </div>
+
 @code {
+    private bool isEditing = false;
+    private UserModel editableUser = new();
 
-    private async  Task ChangePassword()
+    protected override void OnInitialized()
     {
-        var dialog= await DialogService.ShowAsync<ChangePasswordDialog>("修改密码",AppliationSettings.DialogOptions);
-    }
-    private async Task ChangeData()
-    {
-        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("修改数据", AppliationSettings.DialogOptions);
-        var result = await dialog.Result;
-        if (!result!.Canceled)
-        {
-            await InvokeAsync(StateHasChanged);
-        }
+        // 初始化时复制一份数据
+        editableUser = new UserModel
+            {
+                Name = UserCRUDService?.CurrentUser?.Name??string.Empty,
+                UserName = UserCRUDService?.CurrentUser?.UserName??string.Empty
+            };
     }
 
+    private void StartEditing()
+    {
+        isEditing = true;
+    }
+
+    private async Task SaveChanges()
+    {
+        // 保存到数据库
+        UserCRUDService.CurrentUser!.Name = editableUser.Name;
+        UserCRUDService.CurrentUser!.UserName = editableUser.UserName;
+
+        // 假设 UserCRUDService 有 Update 方法
+        await UserCRUDService.SaveAsync();
+
+        SnackBar.Add("资料已更新", Severity.Success);
+        isEditing = false;
+    }
+
+    private void CancelEditing()
+    {
+        // 恢复原始数据
+        editableUser = new UserModel
+            {
+                Name = UserCRUDService?.CurrentUser?.Name??string.Empty,
+                UserName = UserCRUDService?.CurrentUser?.UserName??string.Empty
+            };
+        isEditing = false;
+    }
+
+    private async Task ChangePassword()
+    {
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("修改密码", AppliationSettings.DialogOptions);
+    }
+
+    public class UserModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+    }
 }

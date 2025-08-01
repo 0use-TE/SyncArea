@@ -3,6 +3,7 @@
 @using SyncArea.Services
 @using SyncArea.Identity.Models
 @using System.Text.Json
+@using static SyncArea.Services.WorkItemService
 @inject WorkItemService WorkItemService
 @inject UserManager<ApplicationUser> UserManager
 @inject ISnackbar Snackbar
@@ -85,29 +86,13 @@
 
     private async Task HandleCreateWorkItem()
     {
-        isSending=true;
+        isSending = true;
         await InvokeAsync(StateHasChanged);
-        var user = UserCRUDService.CurrentUser;
-        if (user == null || string.IsNullOrEmpty(user.Id))
-        {
-            ErrorMessage = "用户未登录或 UserId 无效";
-            Snackbar.Add(ErrorMessage, Severity.Error);
-            return;
-        }
 
-        // 验证 WorkspaceId
-        if (WorkspaceId == Guid.Empty)
+        // 验证输入
+        if (!ValidateInput(out string errorMessage))
         {
-            ErrorMessage = "工作区 ID 无效";
-            Snackbar.Add(ErrorMessage, Severity.Error);
-            return;
-        }
-
-        // 验证 Date
-        if (Model.Date == default)
-        {
-            ErrorMessage = "日期不能为空";
-            Snackbar.Add(ErrorMessage, Severity.Error);
+            await DisplayError(errorMessage);
             return;
         }
 
@@ -115,51 +100,85 @@
         {
             var formData = new
             {
-                UserId = user.Id,
+                UserId = UserCRUDService.CurrentUser!.Id,
                 WorkspaceId = WorkspaceId.ToString(),
-                Remark = Model.Remark ?? "",
-                Date = Model.Date.ToString("o") // ISO 8601 格式
+                Remark = Model.Remark ?? string.Empty,
+                Date = Model.Date.ToString("o") // ISO 8601 format
             };
 
-            var result = await JSRuntime.InvokeAsync<UploadResult>("uploadWorkItem","/api/workitems", formData);
-            if (result.Success)
+            var result = await JSRuntime.InvokeAsync<UploadResult>("uploadWorkItem", "/api/workitems", formData);
+
+            if (result.Success && result.Data != null)
             {
-                //var workItem = JsonSerializer.Deserialize<WorkItemDto>(JsonSerializer.SerializeToDocument(result.Data));
-                if (result.Data!= null)
-                {
-                    Snackbar.Add("工作项创建成功", Severity.Success);
-                    await OnWorkItemCreated.InvokeAsync(result.Data);
-                    MudDialog.Close(DialogResult.Ok(true));
-                }
-                else
-                {
-                    ErrorMessage = "创建工作项失败：返回数据无效";
-                    Snackbar.Add(ErrorMessage, Severity.Error); 
-                }
+                Snackbar.Add("工作项创建成功", Severity.Success);
+                await OnWorkItemCreated.InvokeAsync(result.Data);
+                MudDialog.Close(DialogResult.Ok(true));
             }
             else
             {
-                // 解析详细的验证错误
-                try
-                {
-                    var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ValidationErrorResponse>(result.Error);
-                    var errors = errorResponse?.Errors?.Select(e => $"{e.Key}: {string.Join(", ", e.Value)}") ?? new[] { result.Error };
-                    ErrorMessage = $"创建工作项失败: {string.Join("; ", errors)}";
-                }
-                catch
-                {
-                    ErrorMessage = $"创建工作项失败: {result.Error}";
-                }
-                Snackbar.Add(ErrorMessage, Severity.Error);
+                errorMessage = ParseError(result.Error);
+                await DisplayError(errorMessage);
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"创建工作项失败: {ex.Message}";
-            Snackbar.Add(ErrorMessage, Severity.Error);
+            await DisplayError($"创建工作项失败: {ex.Message}");
+        }
+        finally
+        {
+            isSending = false;
         }
     }
 
+    // 验证输入
+    private bool ValidateInput(out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (UserCRUDService.CurrentUser == null || string.IsNullOrEmpty(UserCRUDService.CurrentUser.Id))
+        {
+            errorMessage = "用户未登录或 UserId 无效";
+            return false;
+        }
+
+        if (WorkspaceId == Guid.Empty)
+        {
+            errorMessage = "工作区 ID 无效";
+            return false;
+        }
+
+        if (Model.Date == default)
+        {
+            errorMessage = "日期不能为空";
+            return false;
+        }
+
+        return true;
+    }
+
+    // 解析错误信息
+    private string ParseError(string error)
+    {
+        try
+        {
+            var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ValidationErrorResponse>(error);
+            return errorResponse?.Errors != null
+                ? $"创建工作项失败: {string.Join("; ", errorResponse.Errors.Select(e => $"{e.Key}: {string.Join(", ", e.Value)}"))}"
+                : $"创建工作项失败: {error}";
+        }
+        catch
+        {
+            return $"创建工作项失败: {error}";
+        }
+    }
+
+    // 显示错误信息
+    private async Task DisplayError(string message)
+    {
+        ErrorMessage = message;
+        Snackbar.Add(ErrorMessage, Severity.Error);
+        await InvokeAsync(StateHasChanged);
+    }
     private async Task Cancel()
     {
         await JSRuntime.InvokeVoidAsync("clearFiles");

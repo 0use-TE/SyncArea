@@ -3,6 +3,7 @@
 @using SyncArea.Identity.Models
 @using SyncArea.Misc
 @using SyncArea.Services
+@using static SyncArea.Services.WorkItemService
 @attribute [Authorize(Policy = "WorkspaceMember")]
 @inject WorkItemService WorkItemService
 @inject WorkspaceService WorkspaceService

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Services;
 using SyncArea.Components;
@@ -71,6 +72,7 @@ builder.Services.AddScoped<CircuitHandler, MyCircuit>();
 builder.Services.AddHostedService<InitHostService>();
 builder.Services.AddScoped<UserCRUDService>();
 builder.Services.AddScoped<ModuleCreator>();
+builder.Services.AddScoped<ImageBuildService>();
 
 // 其他配置保持不变
 builder.Services.AddScoped<UserService>();
@@ -79,6 +81,7 @@ builder.Services.AddScoped<WorkItemService>();
 builder.Services.AddScoped<ShareService>();
 //添加options
 builder.Services.Configure<DefaultAdminModel>(builder.Configuration.GetSection("DefaultAdminModel"));
+builder.Services.Configure<ImagesPathModel>(builder.Configuration.GetSection("ImagesPathModel"));
 
 // Add MudBlazor services
 builder.Services.AddMudServices(options => options.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight);
@@ -104,11 +107,13 @@ if (!app.Environment.IsDevelopment())
 
 //app.UseHttpsRedirection();
 
-var imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "images");
-if (!Directory.Exists(imagesPath))
+var imagesPath = app.Services.GetService<IOptions<ImagesPathModel>>()?.Value.ImagePath;
+if (string.IsNullOrEmpty(imagesPath))
 {
-    Directory.CreateDirectory(imagesPath);
+    throw new InvalidOperationException("图片路径没有配置!!!");
 }
+if (!Directory.Exists(imagesPath))
+    Directory.CreateDirectory(imagesPath);
 
 app.UseStaticFiles(new StaticFileOptions
 {

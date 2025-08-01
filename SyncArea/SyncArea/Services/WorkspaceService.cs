@@ -8,11 +8,14 @@ namespace SyncArea.Services
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly ISnackbar _snackbar;
-
-        public WorkspaceService(ApplicationDbContext dbContext, ISnackbar snackbar)
+        private readonly ImageBuildService _imageBuildService;
+        private readonly ILogger<WorkspaceService> _logger;
+        public WorkspaceService(ApplicationDbContext dbContext, ISnackbar snackbar, ImageBuildService imageBuildService, ILogger<WorkspaceService> logger)
         {
             _dbContext = dbContext;
             _snackbar = snackbar;
+            _imageBuildService = imageBuildService;
+            _logger = logger;
         }
 
         public async Task<bool> CreateWorkspaceAsync(string name, string roomNumber, string password)
@@ -54,35 +57,63 @@ namespace SyncArea.Services
                 })
                 .ToListAsync();
         }
-
+        /// <summary>
+        /// 更新工作区
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <param name="roomNumber"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public async Task<bool> UpdateWorkspaceAsync(Guid id, string name, string? roomNumber = null, string? password = null)
         {
-            var workspace = await _dbContext.Workspaces.FindAsync(id);
-            if (workspace == null)
+            try
             {
-                _snackbar.Add("未找到要更新的工作区！", Severity.Error);
-                return false;
-            }
 
-            if (roomNumber != null && roomNumber != workspace.RoomNumber)
-            {
-                if (await _dbContext.Workspaces.AnyAsync(w => w.RoomNumber == roomNumber && w.Id != id))
+                var workspace = await _dbContext.Workspaces.FindAsync(id);
+                if (workspace == null)
                 {
-                    _snackbar.Add("房间号已存在，更新失败！", Severity.Error);
+                    _snackbar.Add("未找到要更新的工作区！", Severity.Error);
                     return false;
                 }
-                workspace.RoomNumber = roomNumber;
-            }
 
-            workspace.Name = name;
-            if (!string.IsNullOrEmpty(password))
+                //修改项目名
+                if (name != null && name != workspace.Name)
+                {
+                    var projectName = workspace.Name;
+                    var oldDir = _imageBuildService.BuildProjectNameDir(projectName);
+                    var newProjectNameDir = _imageBuildService.BuildProjectNameDir(name);
+                    Directory.Move(oldDir, newProjectNameDir);
+                    workspace.Name = name;
+                }
+                //修改项目号
+                if (roomNumber != null && roomNumber != workspace.RoomNumber)
+                {
+                    if (await _dbContext.Workspaces.AnyAsync(w => w.RoomNumber == roomNumber && w.Id != id))
+                    {
+                        _snackbar.Add("项目号已存在，更新失败！", Severity.Error);
+                        return false;
+                    }
+                    var oldDir = _imageBuildService.BuildProjectNumberDir(workspace.Name, workspace.RoomNumber);
+                    var newDir = _imageBuildService.BuildProjectNumberDir(workspace.Name, roomNumber);
+                    Directory.Move(oldDir, newDir);
+                    workspace.RoomNumber = roomNumber;
+                }
+
+                if (!string.IsNullOrEmpty(password))
+                {
+                    workspace.Password = password;
+                }
+
+                await _dbContext.SaveChangesAsync();
+                _snackbar.Add("工作区更新成功！", Severity.Success);
+                return true;
+            }
+            catch (Exception ex)
             {
-                workspace.Password = password;
+                _snackbar.Add("工作区更新失败！", Severity.Error);
+                return false;
             }
-
-            await _dbContext.SaveChangesAsync();
-            _snackbar.Add("工作区更新成功！", Severity.Success);
-            return true;
         }
 
         public async Task<bool> DeleteWorkspaceAsync(Guid id)

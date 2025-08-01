@@ -59,33 +59,35 @@ window.initializeFileInput = (inputId, containerId, countId) => {
         input.value = '';
     });
 };
-
 window.uploadWorkItem = async (url, formData) => {
     try {
         const form = new FormData();
-        // 确保字段不为空
-        form.append('UserId', formData.userId || '');
-        form.append('WorkspaceId', formData.workspaceId || '');
-        form.append('Remark', formData.remark || '');
-        form.append('Date', formData.date || '');
+        console.log('上传数据:', formData);
+        // 添加字段，防止空值
+        form.append('UserId', formData.userId ?? '');
+        form.append('WorkspaceId', formData.workspaceId ?? '');
+        form.append('Remark', formData.remark ?? '');
+        form.append('Date', formData.date ?? '');
 
+        // 添加图片
         for (let i = 0; i < selectedFiles.length; i++) {
             form.append('Images', selectedFiles[i]);
         }
+        console.log('选中的图片:', selectedFiles.length);
 
         const response = await fetch(url, {
             method: 'POST',
             body: form
         });
-        if (response.ok) {
-            const data = await response.json();
-            return { Success: true, Data: data, Error: '' };
-        } else {
-            const error = await response.text();
-            return { Success: false, Data: '', Error: error || response.statusText };
-        }
+
+        const result = await response.json();
+        return {
+            Success: response.ok,
+            Data: response.ok ? result : null,
+            Error: response.ok ? '' : result?.Message || response.statusText
+        };
     } catch (error) {
-        return { Success: false, Data: '', Error: error.message };
+        return { Success: false, Data: null, Error: error.message };
     }
 };
 
