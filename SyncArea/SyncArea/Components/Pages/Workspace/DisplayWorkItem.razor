@@ -83,7 +83,8 @@
             };
         var parameters = new DialogParameters<LookImage>
         {
-            { "Url", url }
+            { x=>x.InitialUrl, url },
+            {x=>x.GroupedWorkItems, GroupedWorkItems}
         };
         await DialogService.ShowAsync<LookImage>("查看图片", parameters, options);
     }

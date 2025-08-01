@@ -1,8 +1,10 @@
 ﻿@page "/workspace/{WorkspaceId:guid}"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
 @using SyncArea.Identity.Models
 @using SyncArea.Misc
 @using SyncArea.Services
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @using static SyncArea.Services.WorkItemService
 @attribute [Authorize(Policy = "WorkspaceMember")]
 @inject WorkItemService WorkItemService
@@ -10,9 +12,12 @@
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject ImageBuildService ImageBuildService
+
 <MudCard Elevation="0">
     <MudCardHeader Class="d-flex flex-column">
-        <MudText Typo="Typo.h5" Color="Color.Primary" Align="Align.Left">工作区名称: @Workspace?.Name</MudText>
+        <MudText Typo="Typo.h5" Color="Color.Primary" Align="Align.Left">工作区名称: @WorkspaceDto?.Name</MudText>
         <br />
         <MudSpacer />
         <div class="d-flex ml-auto">
@@ -39,20 +44,28 @@
 
 @code {
     [Parameter] public Guid WorkspaceId { get; set; }
-    private WorkspaceDto? Workspace { get; set; }
+    private WorkspaceDto? WorkspaceDto { get; set; }
     private List<WorkItemDto> WorkItems { get; set; } = new();
     private IEnumerable<IGrouping<DateTime, WorkItemDto>> GroupedWorkItems => WorkItems.GroupBy(wi => wi.Date.Date).OrderBy(x=>x.Key);
     private bool IsLoading { get; set; } = true;
 
+
+    private Workspace? workspace;
     protected override async Task OnInitializedAsync()
     {
-        Workspace = (await WorkspaceService.GetWorkspacesAsync()).FirstOrDefault(w => w.Id == WorkspaceId);
-        if (Workspace == null)
+        WorkspaceDto = (await WorkspaceService.GetWorkspacesAsync()).FirstOrDefault(w => w.Id == WorkspaceId);
+        if (WorkspaceDto == null)
         {
             Navigation.NavigateTo("/workspaces");
             return;
         }
         WorkItems = await WorkItemService.GetWorkItemsByWorkspaceAsync(WorkspaceId);
+
+        if (workspace == null)
+        {
+            await using var db = await DbContextFactory.CreateDbContextAsync();
+            workspace = await db.Workspaces.FirstOrDefaultAsync(w => w.Id == WorkspaceId);
+        }
         IsLoading = false;
     }
     private async Task ShowCreateWorkItemDialog()
@@ -62,6 +75,14 @@
             { "WorkspaceId", WorkspaceId },
             { "OnWorkItemCreated", EventCallback.Factory.Create<WorkItemDto>(this, async (WorkItemDto newWorkItem) =>
             {
+             
+                if(workspace == null)
+                {
+                    Snackbar.Add("工作区不存在", Severity.Error);
+                    return;
+                }
+                var imageUrlBase=  ImageBuildService.BuildWebImagePath(workspace);
+                newWorkItem.PhotoUrls= newWorkItem.PhotoUrls.Select(p => imageUrlBase + "/" + p).ToList();
                 WorkItems.Add(newWorkItem); // 直接添加新工作项
                await InvokeAsync(StateHasChanged);
                 await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发

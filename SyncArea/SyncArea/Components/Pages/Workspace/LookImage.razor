@@ -1,46 +1,120 @@
-﻿@inject IJSRuntime JSRuntime
+﻿@using static SyncArea.Services.WorkItemService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
-<MudPaper Outlined Class="pa-4 d-flex flex-column">
+<MudPaper Outlined Class="pa-4 d-flex flex-column" Style="width: 80vw; max-width: 800px;">
     <div class="ml-auto mb-2 d-flex gap-2">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@DownloadImage">下载</MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => MudDialog.Close())">关闭</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="DownloadImage">下载</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CloseDialog">关闭</MudButton>
     </div>
-    <div style="height:70vh; overflow: auto;" class="d-flex justify-center align-center">
-        <MudImage Src="@Url" Fluid
-                  Style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+
+    <div class="d-flex justify-center align-center mb-2 gap-4"  tabindex="0">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowPrevious" Disabled="!CanNavigate" Style="min-width: 100px;">上一张</MudButton>
+        <div style="flex-grow: 1; flex-shrink: 1; max-height: 70vh;">
+            <MudImage Src="@CurrentUrl" Fluid Style="width: 100%; height: 100%; object-fit: contain;" />
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowNext" Disabled="!CanNavigate" Style="min-width: 100px;">下一张</MudButton>
+    </div>
+
+    <div class="text-center mt-2">
+        @if (_imageUrls.Any())
+        {
+        <p style="text-align:center">
+        第 @(_currentIndex + 1)  / @(_imageUrls.Count) 张
+        </p>
+        }
     </div>
 </MudPaper>
 
-
 @code {
     [Parameter]
-    public string? Url { get; set; }
+    public string? InitialUrl { get; set; }
+
+    [Parameter]
+    public IEnumerable<IGrouping<DateTime, WorkItemDto>>? GroupedWorkItems { get; set; }
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
+    private List<string> _imageUrls = new();
+    private int _currentIndex;
+    private IJSObjectReference? _jsModule;
+
+    private string CurrentUrl => _imageUrls.Any() ? _imageUrls[_currentIndex] : InitialUrl ?? "";
+    private bool CanNavigate => _imageUrls.Count > 1;
+
+
+
+    protected override void OnParametersSet()
+    {
+        _imageUrls.Clear();
+        _currentIndex = 0;
+
+        if (GroupedWorkItems != null)
+        {
+            _imageUrls = GroupedWorkItems
+                .SelectMany(group => group)
+                .SelectMany(item => item.PhotoUrls)
+                .Where(url => !string.IsNullOrWhiteSpace(url))
+                .Distinct()
+                .ToList();
+
+            if (!string.IsNullOrEmpty(InitialUrl))
+            {
+                _currentIndex = _imageUrls.IndexOf(InitialUrl);
+                _currentIndex = _currentIndex >= 0 ? _currentIndex : 0;
+            }
+        }
+    }
+
+    private void ShowPrevious()
+    {
+        if (_imageUrls.Any())
+        {
+            _currentIndex = (_currentIndex - 1 + _imageUrls.Count) % _imageUrls.Count;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowNext()
+    {
+        if (_imageUrls.Any())
+        {
+            _currentIndex = (_currentIndex + 1) % _imageUrls.Count;
+            StateHasChanged();
+        }
+    }
+
+
+
+    private void CloseDialog() => MudDialog.Close();
 
     private async Task DownloadImage()
     {
-        if (string.IsNullOrWhiteSpace(Url))
-            return;
+        if (string.IsNullOrWhiteSpace(CurrentUrl)) return;
 
-        // 简单转义，防止js字符串错误
-        string safeUrl = Url.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "");
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("downloadFile", CurrentUrl);
+        }
+        catch (JSDisconnectedException)
+        {
+            // 静默处理电路断开
+        }
+    }
 
-        string jsCode = $@"
-            (function() {{
-                var url = '{safeUrl}';
-                var link = document.createElement('a');
-                link.href = url;
-                var fileName = url.substring(url.lastIndexOf('/') + 1) || 'download.png';
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }})();
-        ";
-
-        await JSRuntime.InvokeVoidAsync("eval", jsCode);
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule != null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // 静默处理
+            }
+        }
     }
 }
