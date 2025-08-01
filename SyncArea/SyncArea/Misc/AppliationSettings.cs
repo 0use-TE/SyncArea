@@ -8,7 +8,7 @@ namespace SyncArea.Misc
         {
             NoHeader = true,
             FullWidth = true,
-            MaxWidth = MaxWidth.Small
+            MaxWidth = MaxWidth.Medium
         };
     }
 }

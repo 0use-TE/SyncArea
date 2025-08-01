@@ -43,13 +43,13 @@ namespace SyncArea.Pages.Account
             dbContext.Users.Update(CurrentUser);
             await dbContext.SaveChangesAsync();
         }
-        public async Task<bool> ChangePassword(string password)
+        public async Task<bool> ChangePassword(string oldPassword, string newPassword)
         {
             try
             {
                 if (CurrentUser == null || CurrentUser.PasswordHash == null)
                     return false;
-                var result = await _userManager.ChangePasswordAsync(CurrentUser, CurrentUser.PasswordHash, password);
+                var result = await _userManager.ChangePasswordAsync(CurrentUser, oldPassword, newPassword);
                 if (result.Succeeded)
                     return true;
                 else

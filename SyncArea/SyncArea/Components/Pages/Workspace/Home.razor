@@ -1,5 +1,4 @@
 ﻿@page "/"
-@page "/workspaces"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
 @using SyncArea.Identity.Models
@@ -12,7 +11,7 @@
 
 <MudGrid>
     <MudItem xs="12">
-        <MudCard>
+        <MudCard Outlined>
             <MudCardHeader>
                 <MudText Typo="Typo.h5">我的工作区</MudText>
                 <MudSpacer />

@@ -1,0 +1,47 @@
+﻿@page "/AccountSettingPage"
+@using SyncArea.Pages.Account
+@inject UserCRUDService UserCRUDService
+@inject ISnackbar SnackBar
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+<div class="d-flex flex-column align-center">
+    <MudContainer MaxWidth="MaxWidth.Medium">
+        <MudCard>
+            <MudCardHeader Class="d-flex ">
+                <MudText Align="Align.Left" Typo="Typo.h5" Color="Color.Primary">个人资料</MudText>
+                <MudSpacer></MudSpacer>
+                    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">工作区</MudButton>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>姓名: @UserCRUDService?.CurrentUser?.Name</MudText>
+                <MudText>账号：@UserCRUDService?.CurrentUser?.UserName</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <div class="d-flex flex-column gap-2" style="width:100%">
+                    <MudButton Class="ml-auto" Color="Color.Primary" Variant="Variant.Outlined" OnClick="ChangeData">修改信息</MudButton>
+                    <MudButton Class="ml-auto" Color="Color.Secondary" Variant="Variant.Outlined" OnClick="ChangePassword">修改密码</MudButton>
+                    <MudButton Class="ml-auto" Color="Color.Error" Href="" Variant="Variant.Outlined" OnClick="@(()=>NavigationManager.NavigateTo("/account/logout",true))">登出</MudButton>
+
+                </div>
+            </MudCardActions>
+        </MudCard>
+    </MudContainer>
+</div>
+@code {
+
+    private async  Task ChangePassword()
+    {
+        var dialog= await DialogService.ShowAsync<ChangePasswordDialog>("修改密码",AppliationSettings.DialogOptions);
+    }
+    private async Task ChangeData()
+    {
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("修改数据", AppliationSettings.DialogOptions);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+}

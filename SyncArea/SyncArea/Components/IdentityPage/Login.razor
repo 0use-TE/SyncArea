@@ -1,11 +1,13 @@
 ﻿@page "/login"
 @using Microsoft.AspNetCore.WebUtilities
+@using SyncArea.Components.Layout
 @using SyncArea.Identity.Models
 @using SyncArea.Pages.Account
 @inject NavigationManager Navigation
 @inject UserManager<ApplicationUser> UserManager
 @inject ISnackbar Snackbar
 @inject UserCRUDService UserCRUDService
+@layout EmptyLayout
 
 <div class="d-flex flex-column align-center justify-center gap-2" style="height:80vh">
     <MudContainer MaxWidth="MaxWidth.Small">
