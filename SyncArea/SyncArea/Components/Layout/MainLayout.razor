@@ -15,14 +15,13 @@
         {
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         }
-        @if (BreakpointProvider.Breakpoint >= Breakpoint.Md)
-        {
+     
+        <MudHidden Hidden Breakpoint="@Breakpoint.SmAndDown">
             <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.h6">QFMS文件共享管理系统</MudText> </MudButton>
-        }
-        else
-        {
+        </MudHidden >
+        <MudHidden Hidden  Breakpoint="Breakpoint.MdAndUp">
             <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.subtitle1">QFMS文件共享系统</MudText> </MudButton>
-        }
+        </MudHidden>
 
         <MudSpacer />
 
