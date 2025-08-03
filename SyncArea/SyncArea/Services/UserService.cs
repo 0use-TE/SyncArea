@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
 using SyncArea.Identity.Models;
+using SyncArea.Misc;
 
 namespace SyncArea.Services
 {
@@ -53,7 +54,7 @@ namespace SyncArea.Services
             return true;
         }
 
-        public async Task<bool> CreateUserAsync(string name, string username, string password, List<Guid>? workspaceIds = null)
+        public async Task<bool> CreateUserAsync(string name, string username, string password, E_RoleName role, List<Guid>? workspaceIds = null)
         {
             var user = new ApplicationUser
             {
@@ -74,7 +75,7 @@ namespace SyncArea.Services
             }
 
             // 2. 分配角色
-            result = await _userManager.AddToRoleAsync(user, "User");
+            result = await _userManager.AddToRoleAsync(user, role.ToString());
             if (!result.Succeeded)
             {
                 return false;
@@ -145,7 +146,16 @@ namespace SyncArea.Services
             foreach (var user in users)
             {
                 var appUser = await _userManager.FindByIdAsync(user.Id);
-                user.Role = (await _userManager.GetRolesAsync(appUser)).FirstOrDefault() ?? "User";
+
+                user.Role = appUser != null
+                    && Enum.TryParse<E_RoleName>(
+                        (await _userManager.GetRolesAsync(appUser)).FirstOrDefault() ?? nameof(E_RoleName.User),
+                        ignoreCase: true,
+                        out var parsedRole
+                    )
+                    ? parsedRole
+                    : E_RoleName.User;
+
             }
 
             return users;
@@ -224,7 +234,7 @@ namespace SyncArea.Services
             _snackbar.Add($"用户 {user.UserName} 已加入工作区 {workspace.Name}", Severity.Success);
             return true;
         }
-        public async Task<bool> UpdateUserAsync(string userId, string name, string username, string? password)
+        public async Task<bool> UpdateUserAsync(string userId, string name, string username, E_RoleName roleName, string? password)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
@@ -241,6 +251,23 @@ namespace SyncArea.Services
                 user.Name = name;
                 hasChanges = true;
             }
+            // 更新 Role
+            // 获取当前用户的所有角色
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+            // 如果新角色和当前不同
+            if (!currentRoles.Contains(roleName.ToString()))
+            {
+                // 先移除旧角色
+                if (currentRoles.Any())
+                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+                // 再添加新角色
+                await _userManager.AddToRoleAsync(user, roleName.ToString());
+
+                hasChanges = true;
+            }
+
 
             // 更新 UserName
             if (user.UserName != username)
@@ -341,6 +368,6 @@ namespace SyncArea.Services
         public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string? Name { get; set; }
-        public string Role { get; set; } = string.Empty;
+        public E_RoleName Role { get; set; } = E_RoleName.User;
     }
 }

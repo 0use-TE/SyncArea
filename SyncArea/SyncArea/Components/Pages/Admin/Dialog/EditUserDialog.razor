@@ -12,6 +12,12 @@
             <DataAnnotationsValidator />
             <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
             <MudTextField Variant="Variant.Outlined" Label="账号" @bind-Value="Model.Username" For="@(() => Model.Username)" />
+            <MudSelect @bind-Value=Model.Role Label="权限" Variant="Variant.Outlined">
+                @foreach (var item in Enum.GetValues<E_RoleName>())
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
             <MudTextField Variant="Variant.Outlined" Label="新密码（可选）" @bind-Value="Model.Password" For="@(()=>Model.Password)" />
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {
@@ -39,17 +45,19 @@
         public string Username { get; set; } = string.Empty;
         public string? Password { get; set; }
         public string?Name{ get; set; }
+        public E_RoleName Role { get; set; } 
     }
 
     protected override void OnInitialized()
     {
         Model.Username = User.Username;
         Model.Name = User.Name;
+        Model.Role = User.Role;
     }
 
     private async Task HandleUpdateUser()
     {
-        var success = await UserService.UpdateUserAsync(User.Id,Model.Name??"", Model.Username, Model.Password);
+        var success = await UserService.UpdateUserAsync(User.Id,Model.Name??"", Model.Username, Model.Role,Model.Password);
         if (success)
         {
             await OnUserUpdated.InvokeAsync();

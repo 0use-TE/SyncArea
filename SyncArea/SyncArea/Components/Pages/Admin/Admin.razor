@@ -2,12 +2,12 @@
 @using Microsoft.AspNetCore.Authorization
 @using SyncArea.Components.Pages.Admin.Dialog
 @using SyncArea.Misc
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
 @inject UserService UserService
 @inject WorkspaceService WorkspaceService
 @inject IDialogService DialogService
 @inject ShareService ShareService
-
+@inject UserCRUDService UserCRUDService
 <MudGrid>
     <MudItem xs="12">
         <MudCard Outlined>
@@ -24,10 +24,16 @@
                         <PropertyColumn Title="角色" Property="x=>x.Role"></PropertyColumn>
                         <TemplateColumn Title="操作">
                             <CellTemplate>
+                                @if(UserCRUDService.IsSuperAdmin)
+                                {
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditUserDialog(context.Item)">修改</MudButton>
+                                }
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowAddToWorkspaceDialog(context.Item)">添加到工作区</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowViewWorkspacesDialog(context.Item)">查看工作区</MudButton>
+                               @if(UserCRUDService.IsSuperAdmin)
+                               {
                                 <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteUser(context.Item.Id)">删除</MudButton>
+                               }
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -56,7 +62,10 @@
                         <TemplateColumn Title="操作">
                             <CellTemplate>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditWorkspaceDialog(context.Item)">编辑</MudButton>
+                                @if(UserCRUDService.IsSuperAdmin)
+                                {
                                 <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteWorkspace(context.Item.Id)">删除</MudButton>
+                                }
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>

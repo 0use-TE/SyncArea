@@ -12,6 +12,12 @@
             <MudTextField Variant="Variant.Outlined" Label="姓名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
             <MudTextField Variant="Variant.Outlined" Label="用户名" @bind-Value="Model.Username" For="@(() => Model.Username)" />
             <MudTextField Variant="Variant.Outlined" Label="密码" @bind-Value="Model.Password" InputType="InputType.Password" For="@(() => Model.Password)" />
+            <MudSelect @bind-Value=Model.Role Label="权限" Variant="Variant.Outlined">
+                @foreach(var item in Enum.GetValues<E_RoleName>())
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
             <MudSelect  MultiSelectionTextFunc="GetMultiSelectionText" Variant="Variant.Outlined" T="WorkspaceDto" Label="选择工作区" MultiSelection="true" @bind-SelectedValues="Model.SelectedWorkspaces">
                 @foreach (var workspace in Workspaces)
                 {
@@ -45,6 +51,8 @@
         [DataType(DataType.Password)]
         [MinLength(6, ErrorMessage = "密码长度不能少于6位")]
         public string Password { get; set; } = string.Empty;
+        
+        public E_RoleName Role { get; set; } = E_RoleName.User;
         public IEnumerable<WorkspaceDto> SelectedWorkspaces { get; set; } = new List<WorkspaceDto>();
     }
 
@@ -60,7 +68,7 @@
     {
 
         var workspaceIds = Model.SelectedWorkspaces?.Select(w => w.Id).ToList();
-        var success = await UserService.CreateUserAsync(Model.Name,Model.Username, Model.Password, workspaceIds);
+        var success = await UserService.CreateUserAsync(Model.Name,Model.Username, Model.Password,Model.Role, workspaceIds);
         if (success)
         {
             await OnUserCreated.InvokeAsync();

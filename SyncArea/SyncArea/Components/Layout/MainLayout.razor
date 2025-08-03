@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using SyncArea.Pages.Account
 @inherits LayoutComponentBase
+@inject MudBreakpointProvider BreakpointProvider
 @inject UserCRUDService UserCRUDService
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -9,12 +10,19 @@
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Dense Elevation="1">
-        @if (UserCRUDService.isAdmin)
+        @if (UserCRUDService.CanManageUsers)
         {
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         }
-        <MudNavMenu Href="/" Class="ml-3"><MudText Typo="Typo.h6">QFMS文件共享管理系统</MudText> </MudNavMenu>
-        <MudSpacer />
+        @if (BreakpointProvider.Breakpoint >= Breakpoint.Md)
+        {
+            <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.h6">QFMS文件共享管理系统</MudText> </MudButton>
+        }
+        else
+        {
+        <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.subtitle1">QFMS文件共享系统</MudText> </MudButton>
+        }
+                <MudSpacer />
 
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <AuthorizeView>
@@ -24,7 +32,7 @@
         </AuthorizeView>
 
     </MudAppBar>
-    @if(UserCRUDService.isAdmin)
+    @if(UserCRUDService.CanManageUsers)
     {
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />

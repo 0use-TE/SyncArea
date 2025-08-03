@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using SyncArea.Identity.Models;
+using SyncArea.Misc;
 using SyncArea.Models.Options;
 
 namespace SyncArea.Services
@@ -24,7 +25,7 @@ namespace SyncArea.Services
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            const string adminRole = "Admin";
+            string adminRole = E_RoleName.SuperAdmin.ToString();
             if (!await roleManager.RoleExistsAsync(adminRole))
             {
                 await roleManager.CreateAsync(new IdentityRole(adminRole));
@@ -49,7 +50,7 @@ namespace SyncArea.Services
                 else
                 {
                     var err = string.Join("; ", result.Errors.Select(e => e.Description));
-                    throw new Exception("创建管理员失败：" + err);
+                    throw new Exception("创建超级管理员失败：" + err);
                 }
             }
         }

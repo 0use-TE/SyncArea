@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SyncArea.Identity.Models;
+using SyncArea.Misc;
 using System.Security.Claims;
 
 namespace SyncArea.Pages.Account
@@ -12,8 +13,11 @@ namespace SyncArea.Pages.Account
 
         // 缓存当前用户
         public ApplicationUser? CurrentUser { get; private set; }
-        public bool isAdmin { get; private set; }
+        public bool IsAdmin => UserPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.Admin.ToString() ? true : false;
+        public bool IsSuperAdmin => UserPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.SuperAdmin.ToString() ? true : false;
 
+        public bool CanManageUsers => IsSuperAdmin || IsAdmin;
+        private ClaimsPrincipal UserPrincipal { get; set; } = default!;
         public UserCRUDService(IDbContextFactory<ApplicationDbContext> dbContextFactory, UserManager<ApplicationUser> userManager)
         {
             _dbContextFactory = dbContextFactory;
@@ -30,8 +34,7 @@ namespace SyncArea.Pages.Account
             }
             // 从UserManager加载用户
             CurrentUser = await _userManager.GetUserAsync(userPrincipal);
-            //判断角色是否为管理员
-            isAdmin = userPrincipal.FindFirstValue(ClaimTypes.Role) == "Admin" ? true : false;
+            UserPrincipal = userPrincipal;
         }
 
         // 保存修改

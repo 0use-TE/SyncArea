@@ -76,9 +76,9 @@ namespace SyncArea.Identity.Models
             // 种子数据
             builder.Entity<IdentityRole>().HasData(
                 new IdentityRole { Id = "admin-role", Name = "Admin", NormalizedName = "ADMIN" },
-                new IdentityRole { Id = "user-role", Name = "User", NormalizedName = "USER" }
+                new IdentityRole { Id = "user-role", Name = "User", NormalizedName = "USER" },
+                   new IdentityRole { Id = "superadmin-role", Name = "SuperAdmin", NormalizedName = "SUPERADMIN" }
             );
         }
-
     }
 }

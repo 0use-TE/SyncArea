@@ -85,6 +85,7 @@ builder.Services.Configure<ImagesPathModel>(builder.Configuration.GetSection("Im
 
 // Add MudBlazor services
 builder.Services.AddMudServices(options => options.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight);
+builder.Services.AddScoped<MudBreakpointProvider>();
 builder.Services.AddRazorPages();
 
 // Add services to the container.
