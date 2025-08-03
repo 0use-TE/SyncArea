@@ -14,7 +14,10 @@
             <MudCardHeader>
                 <MudText Typo="Typo.h5">用户</MudText>
                 <MudSpacer />
+                @if(UserCRUDService.IsSuperAdmin)
+                {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateUserDialog">创建用户</MudButton>
+                }
             </MudCardHeader>
             <MudCardContent>
                 <MudDataGrid @ref="UserGrid" ServerData="LoadUsers" T="UserDto" MultiSelection="false" Style="max-height:60vh;overflow:auto" FixedFooter FixedHeader>
@@ -61,6 +64,7 @@
                         <PropertyColumn Title="密码" Property="x=>x.Password"></PropertyColumn>
                         <TemplateColumn Title="操作">
                             <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"  Href=@($"/workspace/{context.Item.Id}")>前往</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditWorkspaceDialog(context.Item)">编辑</MudButton>
                                 @if(UserCRUDService.IsSuperAdmin)
                                 {

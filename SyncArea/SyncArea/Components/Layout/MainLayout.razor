@@ -3,6 +3,7 @@
 @inherits LayoutComponentBase
 @inject MudBreakpointProvider BreakpointProvider
 @inject UserCRUDService UserCRUDService
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -20,23 +21,24 @@
         }
         else
         {
-        <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.subtitle1">QFMS文件共享系统</MudText> </MudButton>
+            <MudButton Href="/" Class="ml-3"><MudText Typo="Typo.subtitle1">QFMS文件共享系统</MudText> </MudButton>
         }
-                <MudSpacer />
+
+        <MudSpacer />
 
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <AuthorizeView>
-        <Authorized>
-            <MudIconButton Icon="@Icons.Material.Outlined.AccountCircle" Edge="Edge.End" Color="Color.Primary" Href="/AccountSettingPage" />
-        </Authorized>
+            <Authorized>
+                <MudIconButton Icon="@Icons.Material.Outlined.AccountCircle" Edge="Edge.End" Color="Color.Primary" Href="/AccountSettingPage" />
+            </Authorized>
         </AuthorizeView>
 
     </MudAppBar>
     @if(UserCRUDService.CanManageUsers)
     {
-    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
-    </MudDrawer>
+        <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+            <NavMenu />
+        </MudDrawer>
     }
     <MudMainContent Class="mt-16 pa-4">
         @Body
@@ -66,15 +68,25 @@
             LayoutProperties = new LayoutProperties()
         };
     }
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+            _isDarkMode = await LocalStorage.GetItemAsync<bool>("Theme");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
-    private void DrawerToggle()
+    private  void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
-    private void DarkModeToggle()
+    private async Task DarkModeToggle()
     {
         _isDarkMode = !_isDarkMode;
+        await LocalStorage.SetItemAsync<bool>("Theme", _isDarkMode);
+
     }
 
     private readonly PaletteLight _lightPalette = new()

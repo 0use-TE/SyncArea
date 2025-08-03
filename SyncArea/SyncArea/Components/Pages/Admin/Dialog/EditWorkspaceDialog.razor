@@ -7,8 +7,8 @@
     <MudCardContent>
         <EditForm Model="@Model" OnValidSubmit="HandleUpdateWorkspace">
             <DataAnnotationsValidator />
-            <MudTextField Variant="Variant.Outlined" Label="房间名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
-            <MudTextField Variant="Variant.Outlined" Label="房间号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
+            <MudTextField Variant="Variant.Outlined" Label="项目名" @bind-Value="Model.Name" For="@(() => Model.Name)" />
+            <MudTextField Variant="Variant.Outlined" Label="项目号" @bind-Value="Model.RoomNumber" For="@(() => Model.RoomNumber)" />
             <MudTextField Variant="Variant.Outlined" Label="密码(可选)" @bind-Value="Model.Password" InputType="InputType.Password" />
             <MudText Color="Color.Error">@ErrorMessage</MudText>
         </EditForm>

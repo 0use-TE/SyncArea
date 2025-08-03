@@ -14,6 +14,7 @@
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @inject ImageBuildService ImageBuildService
+@inject UserCRUDService UserCRUDService
 
 <MudCard Elevation="0">
     <MudCardHeader Class="d-flex flex-column">
@@ -32,7 +33,7 @@
         }
         else if (GroupedWorkItems.Any())
         {
-            <DisplayWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
+            <DisplayWorkItem  DeleteWorkItemCallback=DeleteWorkItem GroupedWorkItems="GroupedWorkItems"></DisplayWorkItem>
         }
         else
         {
@@ -68,6 +69,17 @@
         }
         IsLoading = false;
     }
+    private async Task DeleteWorkItem(WorkItemDto workItemDto)
+    {
+        var item = WorkItems.FirstOrDefault(wi => wi.Id == workItemDto.Id);
+        if(item!=null)
+        {
+            WorkItems.Remove(item);
+            await InvokeAsync(StateHasChanged);   
+        }
+    }
+
+
     private async Task ShowCreateWorkItemDialog()
     {
         var parameters = new DialogParameters
@@ -75,7 +87,7 @@
             { "WorkspaceId", WorkspaceId },
             { "OnWorkItemCreated", EventCallback.Factory.Create<WorkItemDto>(this, async (WorkItemDto newWorkItem) =>
             {
-             
+
                 if(workspace == null)
                 {
                     Snackbar.Add("工作区不存在", Severity.Error);
@@ -83,6 +95,7 @@
                 }
                 var imageUrlBase=  ImageBuildService.BuildWebImagePath(workspace);
                 newWorkItem.PhotoUrls= newWorkItem.PhotoUrls.Select(p => imageUrlBase + "/" + p).ToList();
+                newWorkItem.Name=UserCRUDService?.CurrentUser?.Name??"暂未设置";
                 WorkItems.Add(newWorkItem); // 直接添加新工作项
                await InvokeAsync(StateHasChanged);
                 await JSRuntime.InvokeVoidAsync("initLazyLoad"); // 每次参数更新重新触发

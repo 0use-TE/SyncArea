@@ -33,7 +33,7 @@
 
     public class JoinWorkspaceModel
     {
-        [Required(ErrorMessage = "请输入房间号")]
+        [Required(ErrorMessage = "请输入项目号")]
         public string RoomNumber { get; set; } = string.Empty;
         public string? Password { get; set; }
     }
@@ -57,7 +57,7 @@
         }
         else
         {
-            ErrorMessage = "加入失败，房间号或密码错误";
+            ErrorMessage = "加入失败，项目号或密码错误";
         }
     }
 

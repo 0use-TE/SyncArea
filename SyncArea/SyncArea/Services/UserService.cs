@@ -25,7 +25,7 @@ namespace SyncArea.Services
                 .FirstOrDefaultAsync(w => w.RoomNumber == roomNumber);
             if (workspace == null)
             {
-                _snackbar.Add("房间号不存在", Severity.Error);
+                _snackbar.Add("项目号不存在", Severity.Error);
                 return false;
             }
 

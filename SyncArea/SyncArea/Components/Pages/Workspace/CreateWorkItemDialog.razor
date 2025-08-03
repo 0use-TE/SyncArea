@@ -9,7 +9,6 @@
 @inject ISnackbar Snackbar
 @inject UserCRUDService UserCRUDService
 @inject IJSRuntime JSRuntime
-@inherits MudComponentBase
 
 <MudDialog Class="relative">
     <TitleContent>
@@ -32,11 +31,11 @@
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">取消</MudButton>
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" OnClick="HandleCreateWorkItem">创建</MudButton>
-        <MudOverlay Visible=isSending Absolute DarkBackground>a                                                                                                                         
+        <MudOverlay Visible=isSending Absolute DarkBackground>                                                                                                          
             <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
         </MudOverlay>
     </DialogActions>
-</MudDialog><a href="#"></a>                                                                                                                                                                                                        aqu
+</MudDialog><a href="#"></a>
 
 <style>
     .gallery-card {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SyncArea.Identity.Models;
+using SyncArea.Misc;
 using System.Security.Claims;
 
 namespace SyncArea.Identity
@@ -17,14 +18,23 @@ namespace SyncArea.Identity
         }
 
         protected override async Task HandleRequirementAsync(
-                    AuthorizationHandlerContext context,
-                    WorkspaceMemberRequirement requirement)
+            AuthorizationHandlerContext context,
+            WorkspaceMemberRequirement requirement)
         {
             // 获取 HttpContext
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null)
             {
                 context.Fail();
+                return;
+            }
+
+            // 检查用户是否具有 Admin 或 SuperAdmin 角色
+            var isAdmin = context.User.HasClaim(ClaimTypes.Role, E_RoleName.Admin.ToString());
+            var isSuperAdmin = context.User.HasClaim(ClaimTypes.Role, E_RoleName.SuperAdmin.ToString());
+            if (isAdmin || isSuperAdmin)
+            {
+                context.Succeed(requirement);
                 return;
             }
 

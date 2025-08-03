@@ -4,8 +4,11 @@
 @using SyncArea.Services
 @using static SyncArea.Services.WorkItemService
 @inject IDialogService DialogService
+@inject UserCRUDService UserCRUDService
 @inject IJSRuntime JSRuntime
-    <div id="container"  style="max-height:80vh;overflow:scroll">
+@inject ISnackbar Snackbar
+@inject WorkItemService WorkItemService
+<div id="container"  style="max-height:80vh;overflow:scroll">
     <MudXOutline ScrollContainerSelector="#container"  StyleVariant="OutlineStyleVariant.Bullet" >
         @if (GroupedWorkItems != null)
         {
@@ -18,10 +21,10 @@
                             <MudPaper Outlined Class="pa-2">
                                 @foreach (var item in group)
                                 {
-                                    <div @key="item">
+                                    <div @key="item" class="pa-2">
                                         <MudText>创建者: @item.Name</MudText>
                                         <MudText>备注: @(item.Remark ?? "无")</MudText>
-                                        <MudText>图片数: @item.PhotoCount</MudText>
+                                        <MudText>图片数: @item.PhotoUrls.Count</MudText>
                                         @if (item.PhotoUrls.Any())
                                         {
                                             <MudGrid Class="mt-2">
@@ -30,13 +33,13 @@
                                                     <MudItem xs="6" sm="4" md="3" @key="photoUrl">
                                                         <MudButton OnClick="@(() => LookImage(photoUrl))">
                                                             <MudImage Src="./loading.svg"
-                                                                      data-src="@photoUrl"
-                                                                      Alt="照片"
-                                                                      Fluid
-                                                                      ObjectFit="ObjectFit.Cover"
-                                                                      ObjectPosition="ObjectPosition.Center"
-                                                                      Style="aspect-ratio:1"
-                                                                      Class="lazy-image" />
+                                                            data-src="@photoUrl"
+                                                            Alt="照片"
+                                                            Fluid
+                                                            ObjectFit="ObjectFit.Cover"
+                                                            ObjectPosition="ObjectPosition.Center"
+                                                            Style="aspect-ratio:1"
+                                                            Class="lazy-image" />
                                                         </MudButton>
                                                     </MudItem>
                                                 }
@@ -47,9 +50,17 @@
                                             <MudText Color="Color.Info">无照片</MudText>
                                         }
                                         <br />
+                                        @if (UserCRUDService.CanManageUsers)
+                                        {
+                                            <div class="d-flex">
+                                                <MudButton Class="ml-auto" Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteWorkItem(item))">删除该项</MudButton>
+                                            </div>
+                                        }
+                                        <br />
                                         <MudDivider />
                                     </div>
                                 }
+
                             </MudPaper>
                         </MudExpansionPanel>
                     </MudExpansionPanels>
@@ -63,12 +74,37 @@
 @code {
     [Parameter]
     public IEnumerable<IGrouping<DateTime, WorkItemDto>>? GroupedWorkItems { get; set; }
-
+    [Parameter]
+    public EventCallback<WorkItemDto> DeleteWorkItemCallback{ get; set; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("initLazyLoad");
+        }
+    }
+    private async Task DeleteWorkItem(WorkItemDto workItemDto)
+    {
+        var result =await DialogService.ShowMessageBox("删除工作项", "确定要删除此工作项吗？", yesText: "删除", noText: "取消");
+        if(result.Value)
+        {
+            try
+            {
+                var sucess= await WorkItemService.DeleteWorkItem(workItemDto);
+                if(sucess)
+                {
+                    await DeleteWorkItemCallback.InvokeAsync(workItemDto);
+                    Snackbar.Add("工作项已删除", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("工作项删除失败", Severity.Error);
+                }
+
+            }
+            catch (Exception ex)
+            {
+            }
         }
     }
 

@@ -22,7 +22,7 @@ namespace SyncArea.Services
         {
             if (await _dbContext.Workspaces.AnyAsync(w => w.RoomNumber == roomNumber))
             {
-                _snackbar.Add("房间号已存在，创建失败！", Severity.Error);
+                _snackbar.Add("项目号已存在，创建失败！", Severity.Error);
                 return false;
             }
 

@@ -13,11 +13,10 @@ namespace SyncArea.Pages.Account
 
         // 缓存当前用户
         public ApplicationUser? CurrentUser { get; private set; }
-        public bool IsAdmin => UserPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.Admin.ToString() ? true : false;
-        public bool IsSuperAdmin => UserPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.SuperAdmin.ToString() ? true : false;
+        public bool IsAdmin;
+        public bool IsSuperAdmin;
 
         public bool CanManageUsers => IsSuperAdmin || IsAdmin;
-        private ClaimsPrincipal UserPrincipal { get; set; } = default!;
         public UserCRUDService(IDbContextFactory<ApplicationDbContext> dbContextFactory, UserManager<ApplicationUser> userManager)
         {
             _dbContextFactory = dbContextFactory;
@@ -34,7 +33,9 @@ namespace SyncArea.Pages.Account
             }
             // 从UserManager加载用户
             CurrentUser = await _userManager.GetUserAsync(userPrincipal);
-            UserPrincipal = userPrincipal;
+
+            IsAdmin = userPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.Admin.ToString() ? true : false;
+            IsSuperAdmin = userPrincipal.FindFirstValue(ClaimTypes.Role) == E_RoleName.SuperAdmin.ToString() ? true : false;
         }
 
         // 保存修改

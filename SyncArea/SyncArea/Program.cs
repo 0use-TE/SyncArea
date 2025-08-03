@@ -1,4 +1,5 @@
 using Blazor.QrCodeGen;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -86,6 +87,8 @@ builder.Services.Configure<ImagesPathModel>(builder.Configuration.GetSection("Im
 // Add MudBlazor services
 builder.Services.AddMudServices(options => options.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight);
 builder.Services.AddScoped<MudBreakpointProvider>();
+
+builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddRazorPages();
 
 // Add services to the container.

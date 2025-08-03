@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MudBlazor;
 using SyncArea.Identity.Models;
 using System.Diagnostics;
 
@@ -15,7 +16,29 @@ namespace SyncArea.Services
             _imageBuildService = imageBuildService;
             _logger = logger;
         }
+        public async Task<bool> DeleteWorkItem(WorkItemDto workItemDto)
+        {
+            var item = await _dbContext.WorkItems.FindAsync(workItemDto.Id);
+            if (item is { })
+            {
+                try
+                {
 
+                    _dbContext.WorkItems.Remove(item);
+                    await _dbContext.SaveChangesAsync();
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                _logger.LogWarning("尝试删除不存在的工作项: {WorkItemId}", workItemDto.Id);
+                return false;
+            }
+        }
         public async Task<WorkItemDto> CreateWorkItemAsync(string userId, Guid workspaceId, string? remark, DateTime createDate, List<byte[]>? images)
         {
             // 验证工作区和用户
@@ -95,7 +118,6 @@ namespace SyncArea.Services
                     Remark = wi.Remark,
                     Username = wi.User != null ? wi.User.UserName : "未知用户",
                     Name = wi.User != null ? wi.User.Name : "暂未设置",
-                    PhotoCount = wi.Photos.Count,
                     PhotoUrls = wi.Photos.Select(p => imageUrlBase + "/" + p.ImageUrl).ToList(),
                 })
                 .ToListAsync();
