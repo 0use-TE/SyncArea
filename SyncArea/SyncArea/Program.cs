@@ -3,6 +3,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -90,7 +91,8 @@ builder.Services.AddScoped<MudBreakpointProvider>();
 
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddRazorPages();
-
+builder.Services.AddDataProtection()
+    .SetApplicationName("SyncArea");
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
