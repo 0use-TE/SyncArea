@@ -10,12 +10,12 @@ window.initializeFileInput = (inputId, containerId, countId) => {
         const files = input.files;
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            if (file.size > 10 * 1024 * 1024) {
-                alert(`图片 ${file.name} 超过 10MB`);
+            if (file.size > 20 * 1024 * 1024) {
+                alert(`图片 ${file.name} 超过 20MB`);
                 continue;
             }
-            if (selectedFiles.length >= 10) {
-                alert('最多上传 10 张图片');
+            if (selectedFiles.length >= 20) {
+                alert('最多上传 20 张图片');
                 break;
             }
 

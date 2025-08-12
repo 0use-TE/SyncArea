@@ -102,7 +102,7 @@
                 UserId = UserCRUDService.CurrentUser!.Id,
                 WorkspaceId = WorkspaceId.ToString(),
                 Remark = Model.Remark ?? string.Empty,
-                Date = Model.Date.ToString("o") // ISO 8601 format
+                Date = Model.Date.ToString("o") // 
             };
 
             var result = await JSRuntime.InvokeAsync<UploadResult>("uploadWorkItem", "/api/workitems", formData);
@@ -121,7 +121,7 @@
         }
         catch (Exception ex)
         {
-            await DisplayError($"创建工作项失败: {ex.Message}");
+            await DisplayError($"创建工作项失败: {ex.Message} {ex.Source}");
         }
         finally
         {

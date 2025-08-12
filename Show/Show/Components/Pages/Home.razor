@@ -1,0 +1,26 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<MudCard Outlined Class="pa-4">
+    <MudCardContent>
+<MudTextField @bind-Value=a Variant="Variant.Outlined"></MudTextField>
+<MudTextField @bind-Value=b Variant="Variant.Outlined"></MudTextField>
+        <div>@result</div>
+
+    </MudCardContent>
+    <MudCardActions>
+<MudButton Class="ml-auto" OnClick="Add">相加</MudButton>
+    </MudCardActions>
+</MudCard>
+@code{
+
+    private int a;
+    private int b;
+    private int result;
+    private void Add()
+    {
+        result = a + b;
+        StateHasChanged();
+    }
+}

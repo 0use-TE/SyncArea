@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Show", "Show\Show.csproj", "{73B4006A-E1C0-493F-B8A4-0AAD423A9765}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplication1", "WebApplication1\WebApplication1.csproj", "{107C65AE-F05C-4473-B010-8AA902E1C5BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "加法", "加法\加法.csproj", "{9DEA92EE-98C0-4CC2-B981-3F419103F843}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73B4006A-E1C0-493F-B8A4-0AAD423A9765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73B4006A-E1C0-493F-B8A4-0AAD423A9765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73B4006A-E1C0-493F-B8A4-0AAD423A9765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73B4006A-E1C0-493F-B8A4-0AAD423A9765}.Release|Any CPU.Build.0 = Release|Any CPU
+		{107C65AE-F05C-4473-B010-8AA902E1C5BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{107C65AE-F05C-4473-B010-8AA902E1C5BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{107C65AE-F05C-4473-B010-8AA902E1C5BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{107C65AE-F05C-4473-B010-8AA902E1C5BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DEA92EE-98C0-4CC2-B981-3F419103F843}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DEA92EE-98C0-4CC2-B981-3F419103F843}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DEA92EE-98C0-4CC2-B981-3F419103F843}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DEA92EE-98C0-4CC2-B981-3F419103F843}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {157CA1D3-BC26-4A5F-982B-9DEDF80E97ED}
+	EndGlobalSection
+EndGlobal

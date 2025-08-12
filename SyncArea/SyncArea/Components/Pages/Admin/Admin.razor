@@ -1,13 +1,20 @@
 ﻿@page "/admin"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Options
 @using SyncArea.Components.Pages.Admin.Dialog
 @using SyncArea.Misc
+@using SyncArea.Models.Options
+@using System.IO.Compression
 @attribute [Authorize(Roles = "Admin,SuperAdmin")]
 @inject UserService UserService
 @inject WorkspaceService WorkspaceService
 @inject IDialogService DialogService
 @inject ShareService ShareService
-@inject UserCRUDService UserCRUDService
+@inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService
+@inject UserCRUDService  UserCRUDService
+@inject ISnackbar Snackbar
+@inject IOptions<ImagesPathModel> ImagePathOptions
+
 <MudGrid>
     <MudItem xs="12">
         <MudCard Outlined>
@@ -16,7 +23,7 @@
                 <MudSpacer />
                 @if(UserCRUDService.IsSuperAdmin)
                 {
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateUserDialog">创建用户</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowCreateUserDialog">创建用户</MudButton>
                 }
             </MudCardHeader>
             <MudCardContent>
@@ -29,14 +36,14 @@
                             <CellTemplate>
                                 @if(UserCRUDService.IsSuperAdmin)
                                 {
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditUserDialog(context.Item)">修改</MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditUserDialog(context.Item)">修改</MudButton>
                                 }
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowAddToWorkspaceDialog(context.Item)">添加到工作区</MudButton>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowViewWorkspacesDialog(context.Item)">查看工作区</MudButton>
-                               @if(UserCRUDService.IsSuperAdmin)
-                               {
-                                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteUser(context.Item.Id)">删除</MudButton>
-                               }
+                                @if(UserCRUDService.IsSuperAdmin)
+                                {
+                                    <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteUser(context.Item.Id)">删除</MudButton>
+                                }
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -65,10 +72,11 @@
                         <TemplateColumn Title="操作">
                             <CellTemplate>
                                 <MudButton Variant="Variant.Text" Color="Color.Primary"  Href=@($"/workspace/{context.Item.Id}")>前往</MudButton>
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => ShowEditWorkspaceDialog(context.Item)">编辑</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="() => ShowEditWorkspaceDialog(context.Item)">编辑</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="() => ImportToPack(context.Item)">导出</MudButton>
                                 @if(UserCRUDService.IsSuperAdmin)
                                 {
-                                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteWorkspace(context.Item.Id)">删除</MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteWorkspace(context.Item.Id)">删除</MudButton>
                                 }
                             </CellTemplate>
                         </TemplateColumn>
@@ -86,7 +94,7 @@
     private MudDataGrid<UserDto> UserGrid = null!;
     private MudDataGrid<WorkspaceDto> WorkspaceGrid = null!;
 
-  
+
     private async Task<GridData<UserDto>> LoadUsers(GridState<UserDto> state)
     {
         var users = await UserService.GetUsersAsync(state.Page + 1, state.PageSize);
@@ -132,6 +140,47 @@
         };
         await DialogService.ShowAsync<CreateWorkspaceDialog>("Create Workspace", parameters, AppliationSettings.DialogOptions);
     }
+
+
+    private async Task ImportToPack(WorkspaceDto workspaceDto)
+    {
+        var workspaceName = workspaceDto.Name;
+        var folderPath = Path.Combine(ImagePathOptions.Value.ImagePath ?? "", workspaceName);
+        if (!Directory.Exists(folderPath))
+        {
+            Snackbar.Add($"该工作区暂未包含工作项！", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            // 临时 zip 文件路径
+            var tempZipPath = Path.Combine(Path.GetTempPath(), workspaceName + ".zip");
+
+            if (File.Exists(tempZipPath))
+                File.Delete(tempZipPath);
+
+            // 打包文件夹
+            ZipFile.CreateFromDirectory(folderPath, tempZipPath, CompressionLevel.Fastest, includeBaseDirectory: false);
+
+            // 读取为字节流
+            var zipBytes = await File.ReadAllBytesAsync(tempZipPath);
+
+            // 下载
+            await BlazorDownloadFileService.DownloadFile($"{workspaceName}.zip", zipBytes, "application/zip");
+
+            // 删除临时文件
+            File.Delete(tempZipPath);
+
+            // Snackbar 成功提示
+            Snackbar.Add($"工作区 {workspaceName} 已打包并下载！", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"打包失败：{ex.Message}", Severity.Error);
+        }
+    }
+
 
     private async Task ShowEditWorkspaceDialog(WorkspaceDto workspace)
     {

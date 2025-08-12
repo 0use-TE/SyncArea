@@ -1,4 +1,5 @@
 using Blazor.QrCodeGen;
+using BlazorDownloadFile;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -97,6 +98,8 @@ builder.Services.AddDataProtection()
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddBlazorDownloadFile();
 
 //webApi
 builder.Services.AddControllers();
